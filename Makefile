@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-g -Wall
+CFLAGS=-g -Wall -DCANONICAL_HASH
 LDFLAGS=
 SOURCES=hidx.c test_hidx.c
 OBJECTS=$(SOURCES:.c=.o)

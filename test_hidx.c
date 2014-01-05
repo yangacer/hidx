@@ -45,7 +45,7 @@ int test_insert_no_collision()
   record_t r[3];
   
   r[0] = (record_t) {.str = "acer", .strsize = 4, .num = 1};
-  r[1] = (record_t) {.str = "asus", .strsize = 4, .num = 2};
+  r[1] = (record_t) {.str = "yang", .strsize = 4, .num = 2};
   r[2] = (record_t) {.str = "benq", .strsize = 4, .num = 3};
 
   for (int i=0; i < 3; i++)
@@ -66,14 +66,15 @@ int test_insert_collision()
   record_t r[3];
   
   r[0] = (record_t) {.str = "acer", .strsize = 4, .num = 1};
-  r[1] = (record_t) {.str = "acer", .strsize = 4, .num = 2};
+  r[1] = (record_t) {.str = "asus", .strsize = 4, .num = 2};
+  r[2] = (record_t) {.str = "aaaa", .strsize = 4, .num = 3};
 
-  call(idx, insert, &r[0]);
-  result = (false == call(idx, insert, &r[1])) ? 0 : 1;
-
-  record_t const * found = call(idx, find, get_str(&r[0]));
-  result = (found->num == 1) ? 0 : 1;
-
+  for(int i =0; i <3; ++i)
+    call(idx, insert, &r[i]);
+  
+  for (int i=0; i < 3 && result == 0; i++) {
+    result = (1 == call(idx, count, get_str(&r[i]))) ? 0 : 1;
+  }
   destroy_hidx(&idx);
   return result;
 }
@@ -85,18 +86,49 @@ int test_remove()
   record_t r[3];
   
   r[0] = (record_t) {.str = "acer", .strsize = 4, .num = 1};
-  r[1] = (record_t) {.str = "asus", .strsize = 4, .num = 2};
+  r[1] = (record_t) {.str = "yang", .strsize = 4, .num = 2};
   r[2] = (record_t) {.str = "benq", .strsize = 4, .num = 3};
 
   for (int i=0; i < 3; i++)
     call(idx, insert, &r[i]);
 
-  for (int i=0; i < 3; i++) {
+  for (int i=0; i < 3 && result == 0; i++) {
     call(idx, remove, get_str(&r[i]));
     result = call(idx, count, get_str(&r[i]));
-    if (result) break;
   }
 
+  destroy_hidx(&idx);
+  return result;
+}
+
+int test_remove_collision()
+{
+  int result = 0;
+  hidx_ref idx = create_hidx(1024, &get_str);
+  record_t r[3];
+  
+  r[0] = (record_t) {.str = "acer", .strsize = 4, .num = 1};
+  r[1] = (record_t) {.str = "asus", .strsize = 4, .num = 2};
+  r[2] = (record_t) {.str = "aaaa", .strsize = 4, .num = 3};
+
+  for (int i=0; i < 3; i++)
+    call(idx, insert, &r[i]);
+
+  for (int i=0; i < 3 && result == 0; i++) {
+    result = (0 != call(idx, count, get_str(&r[i]))) ? 0 : 1;
+  }
+  if (!result) {
+    call(idx, remove, get_str(&r[1]));
+    result =  ( 1 == call(idx, count, get_str(&r[2])) ) ? 0 : 1;
+
+    if ( !result ) {
+      r[1].str = "aqua";
+      result = call(idx, insert, &r[1]) ? 0 : 1;
+      for (int i=0; i < 3 && result == 0; ++i) {
+        result = (1 == call(idx, count, get_str(&r[i]))) ? 0 : 1;
+      }
+    }
+  }
   destroy_hidx(&idx);
   return result;
 }
@@ -104,7 +136,7 @@ int test_remove()
 int check(int return_code)
 {
   if (return_code) 
-    printf("failed\n");
+    printf("fail\n");
   else
     printf("ok\n");
   return return_code;
@@ -124,6 +156,7 @@ int main()
   TEST(insert_no_collision);
   TEST(insert_collision);
   TEST(remove);
+  TEST(remove_collision);
 
   printf("--------\n");
   printf("failure: %d passed: %d total: %d\n",
