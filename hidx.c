@@ -13,12 +13,12 @@ typedef struct hidx_entry_header
   size_t fib_idx;
 } hidx_entry_header_t;
 
-typedef struct hidx_impl 
+struct hidx_impl 
 {
   size_t size;
   hidx_entry_header_t *entry;
   hkey_extractor_cb extractor;
-} hidx_impl_t;
+};
 
 /**
  * Prototypes
