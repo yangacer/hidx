@@ -59,12 +59,6 @@ void destroy_hidx(hidx_ref *ref)
     ref->inst_ = 0;
 }
 
-#define ZEROOUT_(ADDR, SIZE) \
-    do {\
-        for(size_t i=0; i<SIZE; ++i) \
-        (ADDR)[i] = (typeof(ADDR[i])) {0}; \
-    } while(0);
-
 static size_t hash(key_desc_t key, size_t max)
 {
 #ifdef CANONICAL_HASH
