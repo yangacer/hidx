@@ -24,12 +24,12 @@ struct hidx_impl
  * Prototypes
  * */
 static hidx_impl_t *hidx_ctor(size_t entry_num, hkey_extractor_cb extractor);
-static void hidx_dtor(hidx_impl_t* inst);
-static bool hidx_insert(hidx_impl_t* inst, void const *val);
-static void hidx_remove(hidx_impl_t* inst, key_desc_t key);
-static size_t hidx_count(hidx_impl_t const* inst, key_desc_t key);
-static size_t hidx_size(hidx_impl_t const* inst);
-static void const *hidx_find(hidx_impl_t const* inst, key_desc_t key);
+static void         hidx_dtor(hidx_impl_t* inst);
+static bool         hidx_insert(hidx_impl_t* inst, void const *val);
+static void         hidx_remove(hidx_impl_t* inst, key_desc_t key);
+static size_t       hidx_count(hidx_impl_t const* inst, key_desc_t key);
+static size_t       hidx_size(hidx_impl_t const* inst);
+static void const * hidx_find(hidx_impl_t const* inst, key_desc_t key);
 
 static hidx_interface_t hidx_fnptr_ = {
     .ctor = &hidx_ctor,
@@ -96,12 +96,15 @@ static hidx_impl_t *hidx_ctor(size_t entry_num, hkey_extractor_cb extractor)
 
     (*inst) = (hidx_impl_t) {
         .size = entry_num,
-            .entry = calloc(entry_num, sizeof(hidx_entry_header_t)),
-            .extractor = extractor
+        .entry = calloc(entry_num, sizeof(hidx_entry_header_t)),
+        .extractor = extractor
     };
-    if (0 == inst->entry) 
+    if (0 == inst->entry) {
+        free(inst);
         return 0;
-
+    }
+    assert(0 != inst && 0 != inst->entry &&
+           "hidx allocation failed");
     return inst;
 }
 

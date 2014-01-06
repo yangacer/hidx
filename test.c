@@ -27,5 +27,8 @@ int main()
   i = (struct ini){.a = 123, .b = 'c'};
  
   int *intp = malloc(sizeof(int)*4);
+  int arr[3] = { 1, 2, 3};
+
+  assert(sizeof(arr)/sizeof(int) == 3);
   return 0;
 }
