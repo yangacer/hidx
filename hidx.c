@@ -100,13 +100,12 @@ static hidx_impl_t *hidx_ctor(size_t entry_num, hkey_extractor_cb extractor)
 
   (*inst) = (hidx_impl_t) {
     .size = entry_num,
-      .entry = malloc(entry_num * sizeof(hidx_entry_header_t)),
+      .entry = calloc(entry_num, sizeof(hidx_entry_header_t)),
       .extractor = extractor
   };
   if (0 == inst->entry) 
     return 0;
 
-  ZEROOUT_(inst->entry, inst->size);
   return inst;
 }
 
@@ -129,10 +128,9 @@ static bool hidx_insert(hidx_impl_t* inst, void const *val)
   // initial array for storing collisions
   if (0 == header->collisions) {
     header->fib_idx = 0;
-    header->collisions = malloc(sizeof(void const*) * fib_table[0]);
+    header->collisions = calloc(fib_table[0], sizeof(void const*));
     if (0 == header->collisions)
       return false;
-    ZEROOUT_(header->collisions, sizeof(void const*) * fib_table[0]);
   }
 
   ASSERT_COND_NULLPTR_CANNOT_PRECEED_NON_NULL_ONES;
