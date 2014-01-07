@@ -1,12 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "bucket.h"
-
-#define call(Ref, Mfn) \
-    (Ref.fnptr_->Mfn(Ref.inst_))
-
-#define call_n(Ref, Mfn, ...) \
-    (Ref.fnptr_->Mfn(Ref.inst_, __VA_ARGS__))
+#include "encap.h"
 
 int test_create()
 {

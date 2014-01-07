@@ -4,38 +4,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "bucket.h"
+#include "hash.h"
 
 // Forwarded decls
 struct hidx_impl;
 struct mhidx_impl;
 typedef struct hidx_impl hidx_impl_t;
+typedef struct mhidx_impl mhidx_impl_t;
 
-/**
- * Key descriptor
- */
-typedef struct key_desc
-{
-    void const *raw;
-    size_t size;
-} key_desc_t;
-
-/**
- * Key extractor callback interface.
- * @codebeg
- * struct my_rec {
- *   char const *key;
- *   size_t size;
- *   int other_value;
- * };
- *
- * key_desc_t my_extractor(void const *val)
- * {
- *   my_rec const *r = val;
- *   return (key_desc_t){ .raw = r->key, .size = r->size };
- * }
- * @endcode
- */
-typedef key_desc_t (*hkey_extractor_cb)(void const* val);
 
 /**
  * hidx - hash index 
@@ -62,21 +38,25 @@ void destroy_hidx(hidx_ref *ref);
 
 /**
  * mhidx - multi-hash index
- typedef struct mhidx_interface
- {
- struct hidx_impl* (*ctor)   (size_t entry_num, hkey_extractor_cb extractor);
- void          (*dtor)   (struct hidx_impl*);
- bool          (*insert) (struct hidx_impl*, void const *val);
- void          (*remove) (struct hidx_impl*, key_desc_t key);
- size_t        (*count)  (struct hidx_impl*, key_desc_t key);
- bucket_t      (*find)   (struct hidx_impl*, key_desc_t key);
- } mhidx_interface_t;
+ */
+typedef struct mhidx_interface
+{
+    mhidx_impl_t* (*ctor)   (size_t entry_num, hkey_extractor_cb extractor);
+    void          (*dtor)   (mhidx_impl_t*);
+    bool          (*insert) (mhidx_impl_t*, void const *val);
+    void          (*remove) (mhidx_impl_t*, key_desc_t key);
+    size_t        (*count)  (mhidx_impl_t const*, key_desc_t key);
+    size_t        (*size)   (mhidx_impl_t const*);
+    bucket_ref    (*find)   (mhidx_impl_t const*, key_desc_t key);
+} mhidx_interface_t;
 
- typedef struct mhidx
- {
- mhidx_interface_t *fnptr_;
- mstruct hidx_impl *inst_;
- } mhidx_ref;
+typedef struct mhidx
+{
+    mhidx_interface_t const *fnptr_;
+    mhidx_impl_t *inst_;
+} mhidx_ref;
 
-*/
+mhidx_ref create_mhidx(size_t entry_num, hkey_extractor_cb extractor);
+void destroy_mhidx(mhidx_ref *ref);
+
 #endif

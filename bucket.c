@@ -122,9 +122,7 @@ void bucket_remove_keep_order(bucket_impl_t *inst, size_t offset)
         return;
     inst->size -= 1;
     for ( size_t i=offset; i < inst->size; ++i) {
-        void const *tmp = inst->storage[i];
         inst->storage[i] = inst->storage[i+1];
-        inst->storage[i+1] = tmp;
     }
     inst->storage[inst->size] = 0;
 }

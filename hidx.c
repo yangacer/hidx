@@ -2,10 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
-#ifdef CANONICAL_HASH
-#warning "CANONICLA_HASH is used for testing only. Do not use it in production."
-#endif
+#include "hash.h"
 
 typedef struct hidx_entry_header
 {
@@ -57,19 +54,6 @@ void destroy_hidx(hidx_ref *ref)
 {
     ref->fnptr_->dtor(ref->inst_);
     ref->inst_ = 0;
-}
-
-static size_t hash(key_desc_t key, size_t max)
-{
-#ifdef CANONICAL_HASH
-    return ((unsigned char*)key.raw)[0];
-#else
-    size_t hval = 5381;
-    for(size_t i = 0; i < key.size; ++i) {
-        hval = (hval << 5) + hval + ((unsigned char *)key.raw)[i];
-    }
-    return hval % max;
-#endif
 }
 
 static size_t fib_table[10] = { 2, 3, 5, 8, 13, 21, 44, 65, 109, 174 };
