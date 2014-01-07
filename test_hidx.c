@@ -31,7 +31,10 @@ key_desc_t get_num(void const *val)
 int test_create()
 {
     hidx_ref idx = create_hidx(1024, 0);
-    return (idx.inst_ == 0) ? 1 : 0; 
+    if(!is_valid_ref(idx))
+        return 1;
+    destroy_hidx(&idx);
+    return 0;
 }
 
 int test_destroy()
@@ -41,11 +44,12 @@ int test_destroy()
     destroy_hidx(&idx);
     return (idx.inst_ == 0) ? 0 : 1;
 }
+
 int test_size()
 {
     int result = 0;
     hidx_ref idx = create_hidx(1024, 0);
-    assert(idx.inst_ != 0);
+    assert(is_valid_ref(idx));
     result = (1024 == call(idx, size)) ? 0 : 1;
     destroy_hidx(&idx);
     return result;
@@ -107,7 +111,7 @@ int test_remove()
 
     for (int i=0; i < 3 && result == 0; i++) {
         call_n(idx, remove, get_str(&r[i]));
-        result = call_n(idx, count, get_str(&r[i]));
+        result = (0 == call_n(idx, count, get_str(&r[i]))) ? 0 : 1;
     }
 
     destroy_hidx(&idx);

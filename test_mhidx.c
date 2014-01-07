@@ -31,15 +31,120 @@ key_desc_t get_num(void const *val)
 int test_create()
 {
     mhidx_ref idx = create_mhidx(1024, 0);
-    return (idx.inst_ == 0) ? 1 : 0; 
+    if(!is_valid_ref(idx)) 
+        return 1;
+    destroy_mhidx(&idx);
+    return 0;
 }
 
 int test_destroy()
 {
     mhidx_ref idx = create_mhidx(1024, 0);
-    assert(idx.inst_ != 0);
+    assert(is_valid_ref(idx));
     destroy_mhidx(&idx);
-    return (idx.inst_ == 0) ? 0 : 1;
+    return !is_valid_ref(idx) ? 0 : 1;
+}
+
+int test_size()
+{
+    int result = 0;
+    mhidx_ref idx = create_mhidx(1024, 0);
+    assert(is_valid_ref(idx));
+    result = (1024 == call(idx, size)) ? 0 : 1;
+    destroy_mhidx(&idx);
+    return result;
+}
+
+int test_insert_no_collision()
+{
+    int result = 0;
+    mhidx_ref idx = create_mhidx(1024, &get_str);
+    record_t r[3];
+
+    r[0] = (record_t) {.str = "acer", .strsize = 4, .num = 1};
+    r[1] = (record_t) {.str = "yang", .strsize = 4, .num = 2};
+    r[2] = (record_t) {.str = "benq", .strsize = 4, .num = 3};
+
+    for (int i=0; i < 3; i++)
+        call_n(idx, insert, &r[i]);
+
+    for (int i=0; i < 3 && result == 0; i++) {
+        result = ( 1 == call_n(idx, count, get_str(&r[i]))) ? 0 : 1;
+    }
+    destroy_mhidx(&idx);
+    return result;
+}
+
+int test_insert_collision()
+{
+    int result = 0;
+    mhidx_ref idx = create_mhidx(1024, &get_str);
+    record_t r[3];
+
+    r[0] = (record_t) {.str = "acer", .strsize = 4, .num = 1};
+    r[1] = (record_t) {.str = "asus", .strsize = 4, .num = 2};
+    r[2] = (record_t) {.str = "aaaa", .strsize = 4, .num = 3};
+
+    for(int i =0; i <3; ++i)
+        call_n(idx, insert, &r[i]);
+
+    for (int i=0; i < 3 && result == 0; i++) {
+        result = (1 == call_n(idx, count, get_str(&r[i]))) ? 0 : 1;
+    }
+    destroy_mhidx(&idx);
+    return result;
+}
+
+int test_remove()
+{
+    int result = 0;
+    mhidx_ref idx = create_mhidx(1024, &get_str);
+    record_t r[3];
+
+    r[0] = (record_t) {.str = "acer", .strsize = 4, .num = 1};
+    r[1] = (record_t) {.str = "yang", .strsize = 4, .num = 2};
+    r[2] = (record_t) {.str = "benq", .strsize = 4, .num = 3};
+
+    for (int i=0; i < 3; i++)
+        call_n(idx, insert, &r[i]);
+
+    for (int i=0; i < 3 && result == 0; i++) {
+        call_n(idx, remove, get_str(&r[i]));
+        result = (0 == call_n(idx, count, get_str(&r[i]))) ? 0 : 1;
+    }
+
+    destroy_mhidx(&idx);
+    return result;
+}
+
+int test_remove_collision()
+{
+    int result = 0;
+    mhidx_ref idx = create_mhidx(1024, &get_str);
+    record_t r[3];
+
+    r[0] = (record_t) {.str = "acer", .strsize = 4, .num = 1};
+    r[1] = (record_t) {.str = "asus", .strsize = 4, .num = 2};
+    r[2] = (record_t) {.str = "aaaa", .strsize = 4, .num = 3};
+
+    for (int i=0; i < 3; i++)
+        call_n(idx, insert, &r[i]);
+
+    for (int i=0; i < 3 ; i++) {
+        assert(0 != call_n(idx, count, get_str(&r[i])));
+    }
+    call_n(idx, remove, get_str(&r[1]));
+    assert( 1 == call_n(idx, count, get_str(&r[0])) );
+    assert( 0 == call_n(idx, count, get_str(&r[1])) );
+    assert( 1 == call_n(idx, count, get_str(&r[2])) );
+
+    r[1].str = "aqua";
+    result = call_n(idx, insert, &r[1]) ? 0 : 1;
+    for (int i=0; i < 3 && result == 0; ++i) {
+        result = (1 == call_n(idx, count, get_str(&r[i]))) ? 0 : 1;
+    }
+    destroy_mhidx(&idx);
+    return result;
 }
 
 int check(int return_code)
@@ -63,11 +168,11 @@ int main()
 
     TEST(create);
     TEST(destroy);
-    //TEST(size);
-    //TEST(insert_no_collision);
-    //TEST(insert_collision);
-    //TEST(remove);
-    //TEST(remove_collision);
+    TEST(size);
+    TEST(insert_no_collision);
+    TEST(insert_collision);
+    TEST(remove);
+    TEST(remove_collision);
 
     printf("--------\n");
     printf("failure: %d passed: %d total: %d\n",
