@@ -14,8 +14,9 @@ typedef struct bucket_interface
 {
     bucket_impl_t*    (*ctor)               ();
     void              (*dtor)               (bucket_impl_t *);
-    bool              (*append)             (bucket_impl_t *, size_t offset, void const *val);
+    bool              (*append)             (bucket_impl_t *, void const *val);
     void              (*remove)             (bucket_impl_t *, size_t offset);
+    void              (*remove_keep_order)  (bucket_impl_t *, size_t offset);
     void const*       (*at)                 (bucket_impl_t *, size_t offset);
     size_t            (*size)               (bucket_impl_t const*);
 } bucket_interface_t;

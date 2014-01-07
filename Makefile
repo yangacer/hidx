@@ -1,14 +1,17 @@
 CC=clang
 CFLAGS=-g -Wall -DCANONICAL_HASH
 LDFLAGS=
-SOURCES=hidx.c test_hidx.c
+SOURCES=hidx.c bucket.c test_hidx.c test_bucket.c
 OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=test_hidx
+EXECUTABLE=test_hidx test_bucket
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(SOURCES) $(EXECUTABLE) 
 	
-$(EXECUTABLE): $(OBJECTS) 
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+test_hidx: test_hidx.o hidx.o
+	$(CC) $(LDFLAGS) test_hidx.o hidx.o -o $@
+
+test_bucket: test_bucket.o bucket.o
+	$(CC) $(LDFLAGS) test_bucket.o bucket.o -o $@
 
 .c.o:
 	$(CC) ${CFLAGS} -c $< -o $@
