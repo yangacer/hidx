@@ -106,8 +106,8 @@ static void mhidx_dtor(mhidx_impl_t* inst)
 static bool mhidx_insert(mhidx_impl_t* inst, void const *val)
 {
     bool result = false;
-    key_desc_t newkey = inst->extractor(val);
-    size_t offset = hash(newkey, inst->size);
+    key_desc_t key = inst->extractor(val);
+    size_t offset = hash(key, inst->size);
     bucket_ref collisions = inst->entry[offset];
     for(size_t i = 0 ; i < call(collisions, size); ++i) {
         bucket_ref *bucket = (bucket_ref*)call_n(collisions, at, i);
@@ -120,8 +120,8 @@ static bool mhidx_insert(mhidx_impl_t* inst, void const *val)
             continue;
         }
         key_desc_t curkey = inst->extractor(call_n(*bucket, at, 0));
-        if (curkey.size == newkey.size &&
-            0 == memcmp(curkey.raw, newkey.raw, curkey.size))
+        if (curkey.size == key.size &&
+            0 == memcmp(curkey.raw, key.raw, curkey.size))
         {
             if(!call_n(*bucket, append, val))
                 return false;

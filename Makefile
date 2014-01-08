@@ -7,8 +7,8 @@ EXECUTABLE=test_hidx test_mhidx test_bucket
 
 all: $(SOURCES) $(EXECUTABLE) 
 	
-test_hidx: test_hidx.o hidx.o
-	$(CC) $(LDFLAGS) test_hidx.o hidx.o -o $@
+test_hidx: test_hidx.o hidx.o bucket.o
+	$(CC) $(LDFLAGS) test_hidx.o hidx.o bucket.o -o $@
 
 test_mhidx: test_mhidx.o mhidx.o bucket.o
 	$(CC) $(LDFLAGS) test_mhidx.o mhidx.o bucket.o -o $@

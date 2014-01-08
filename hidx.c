@@ -3,17 +3,12 @@
 #include <string.h>
 #include <assert.h>
 #include "hash.h"
-
-typedef struct hidx_entry_header
-{
-    void const **collisions;
-    size_t fib_idx;
-} hidx_entry_header_t;
+#include "encap.h"
 
 struct hidx_impl 
 {
     size_t size;
-    hidx_entry_header_t *entry;
+    bucket_ref *entry;
     hkey_extractor_cb extractor;
 };
 
@@ -46,8 +41,8 @@ hidx_ref create_hidx(size_t entry_num, hkey_extractor_cb extractor)
 {
     return (hidx_ref) {
         .fnptr_ = &hidx_fnptr_,
-            .inst_ = hidx_fnptr_.ctor(entry_num, extractor)
-    };  
+        .inst_ = hidx_fnptr_.ctor(entry_num, extractor)
+    };
 }
 
 void destroy_hidx(hidx_ref *ref)
@@ -55,22 +50,6 @@ void destroy_hidx(hidx_ref *ref)
     ref->fnptr_->dtor(ref->inst_);
     ref->inst_ = 0;
 }
-
-static size_t fib_table[10] = { 2, 3, 5, 8, 13, 21, 44, 65, 109, 174 };
-
-#if !defined(NDEBUG) && !defined(KERNEL)
-#define ASSERT_COND_NULLPTR_CANNOT_PRECEED_NON_NULL_ONES \
-    for (size_t i = 0; i < fib_table[header->fib_idx]; ++i) { \
-        if ( header->collisions[i] == 0 ) { \
-            for (size_t j = i + 1; j < fib_table[header->fib_idx]; ++j) { \
-                assert(header->collisions[j] == 0 && \
-                       "Nullptr cannot preceed non null ones"); \
-            } \
-        } \
-    }
-#else
-#define ASSERT_COND_NULLPTR_CANNOT_PRECEED_NON_NULL_ONES {}
-#endif
 
 static hidx_impl_t *hidx_ctor(size_t entry_num, hkey_extractor_cb extractor)
 {
@@ -80,13 +59,26 @@ static hidx_impl_t *hidx_ctor(size_t entry_num, hkey_extractor_cb extractor)
 
     (*inst) = (hidx_impl_t) {
         .size = entry_num,
-        .entry = calloc(entry_num, sizeof(hidx_entry_header_t)),
+        .entry = calloc(entry_num, sizeof(bucket_ref)),
         .extractor = extractor
     };
     if (0 == inst->entry) {
         free(inst);
         return 0;
     }
+    for (size_t i = 0; i < entry_num; ++i ) {
+        inst->entry[i] = create_bucket();
+        if(!is_valid_ref(inst->entry[i])) {
+            for(size_t j=0; j < i; ++j) {
+                destroy_bucket(&inst->entry[j]);
+            }
+            free(inst->entry);
+            free(inst);
+            return 0;
+        }
+        assert(0 == call(inst->entry[i], size));
+    }
+
     assert(0 != inst && 0 != inst->entry &&
            "hidx allocation failed");
     return inst;
@@ -95,8 +87,7 @@ static hidx_impl_t *hidx_ctor(size_t entry_num, hkey_extractor_cb extractor)
 static void hidx_dtor(hidx_impl_t* inst)
 {
     for (size_t i = 0; i < inst->size; ++i) {
-        if(inst->entry[i].collisions)
-            free(inst->entry[i].collisions);
+        destroy_bucket(inst->entry + i);
     }
     free(inst->entry);
     free(inst);
@@ -104,90 +95,38 @@ static void hidx_dtor(hidx_impl_t* inst)
 
 static bool hidx_insert(hidx_impl_t* inst, void const *val)
 {
-    bool result = false;
-    key_desc_t newkey = inst->extractor(val);
-    size_t offset = hash(newkey, inst->size);
-    hidx_entry_header_t *header = inst->entry + offset;
-    // initial array for storing collisions
-    if (0 == header->collisions) {
-        header->fib_idx = 0;
-        header->collisions = calloc(fib_table[0], sizeof(void const*));
-        if (0 == header->collisions)
+    key_desc_t key = inst->extractor(val);
+    size_t offset = hash(key, inst->size);
+    bucket_ref collisions = inst->entry[offset];
+    // search for dup in collisions
+    for (size_t i = 0; i < call(collisions, size); ++i) {
+        void const *curval = call_n(collisions, at, i);
+        key_desc_t curkey = inst->extractor(curval);
+        if ( curkey.size == key.size && 
+             0 == memcmp(curkey.raw, key.raw, curkey.size ))
+        {
+            // duplicated key
             return false;
+        } 
     }
-
-    ASSERT_COND_NULLPTR_CANNOT_PRECEED_NON_NULL_ONES;
-
-    // search for collisions and empty slot
-    for (size_t i = 0; i < fib_table[header->fib_idx]; ++i) {
-        void const **slot = &(header->collisions[i]);
-        if (0 == *slot) {
-            *slot = val;
-            result = true;
-            break;
-        } else {
-            key_desc_t curkey = inst->extractor(*slot);
-            if ( curkey.size == newkey.size && 
-                 0 == memcmp(curkey.raw, newkey.raw, curkey.size ))
-            {
-                // duplicated key
-                return false;
-            } 
-        }
-    }
-    // no duplicated keys but collisions storage is too small
-    if (false == result) {
-        // collisions storage is too large, consider using bigger hidx
-        if ( header->fib_idx >= 9 )
-            return false;
-        // reallocate and copy collisions
-        void const **orig = header->collisions;
-        size_t cursize = fib_table[header->fib_idx];
-
-        header->collisions = malloc(
-          sizeof(void const*) * fib_table[header->fib_idx + 1]);
-        if ( header->collisions ) {
-            memcpy(header->collisions, orig, sizeof(void const*) * cursize);
-            free(orig);
-            header->collisions[cursize] = val;
-            header->fib_idx += 1;
-            result = true;
-        } else {
-            header->collisions = orig;  
-        }
-    }
-    return result;
+    return call_n(collisions, append, val);
 }
 
 static void hidx_remove(hidx_impl_t* inst, key_desc_t key)
 {
     size_t offset = hash(key, inst->size);
-    hidx_entry_header_t *header = inst->entry + offset;
-    if (0 == header->collisions) 
-        return;
-    for (size_t i = 0; i < fib_table[header->fib_idx]; ++i) {
-        void const **slot = &(header->collisions[i]);
-        if (0 == *slot) {
-            return;  
-        } else {
-            key_desc_t curkey = inst->extractor(*slot);
-            if ( curkey.size == key.size && 
-                 0 == memcmp(curkey.raw, key.raw, curkey.size ))
-            { // found target
-                *slot = 0;
-                // swap removed one with the last non-null one
-                size_t cursize = fib_table[header->fib_idx];
-                for (size_t j = cursize; j-- > i + 1;) {
-                    if (0 != header->collisions[j]) {
-                        *slot = header->collisions[j];
-                        header->collisions[j] = 0;
-                        break;
-                    }
-                } 
-            }
-        }
+    bucket_ref collisions = inst->entry[offset];
+    // search for dup in collisions
+    for (size_t i = 0; i < call(collisions, size); ++i) {
+        void const *curval = call_n(collisions, at, i);
+        key_desc_t curkey = inst->extractor(curval);
+        if ( curkey.size == key.size && 
+             0 == memcmp(curkey.raw, key.raw, curkey.size ))
+        {
+            call_n(collisions, remove, i);
+            return;
+        } 
     }
-    ASSERT_COND_NULLPTR_CANNOT_PRECEED_NON_NULL_ONES;
 }
 
 static size_t hidx_count(hidx_impl_t const* inst, key_desc_t key)
@@ -203,21 +142,16 @@ static size_t hidx_size(hidx_impl_t const* inst)
 static void const *hidx_find(hidx_impl_t const* inst, key_desc_t key)
 {
     size_t offset = hash(key, inst->size);
-    hidx_entry_header_t *header = inst->entry + offset;
-    if (0 == header->collisions) 
-        return 0;
-    for (size_t i = 0; i < fib_table[header->fib_idx]; ++i) {
-        void const **slot = &(header->collisions[i]);
-        if (0 == *slot) {
-            return 0;  
-        } else {
-            key_desc_t curkey = inst->extractor(*slot);
-            if ( curkey.size == key.size && 
-                 0 == memcmp(curkey.raw, key.raw, curkey.size ))
-            { // found target
-                return *slot;
-            }
-        }
+    bucket_ref collisions = inst->entry[offset];
+    // search for dup in collisions
+    for (size_t i = 0; i < call(collisions, size); ++i) {
+        void const *curval = call_n(collisions, at, i);
+        key_desc_t curkey = inst->extractor(curval);
+        if ( curkey.size == key.size && 
+             0 == memcmp(curkey.raw, key.raw, curkey.size ))
+        {
+            return curval;
+        } 
     }
     return 0;
 }
