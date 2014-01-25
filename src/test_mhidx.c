@@ -1,7 +1,16 @@
-#include <stdio.h>
-#include <assert.h>
 #include "hidx.h"
 #include "encap.h"
+
+#ifdef KLD_MODULE
+#include <sys/param.h>
+#include <sys/module.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#define assert(STMT) if(!STMT){ printf("assert failed: %s\n", #STMT); }
+#else
+#include <stdio.h>
+#include <assert.h>
+#endif
 
 typedef struct record
 {
@@ -10,7 +19,18 @@ typedef struct record
     int  num;
 } record_t;
 
-key_desc_t get_str(void const *val)
+static key_desc_t get_str(void const *val);
+static int test_create(void);
+static int test_destroy(void);
+static int test_size(void);
+static int test_insert_no_collision(void);
+static int test_insert_collision(void);
+static int test_remove(void);
+static int test_remove_collision(void);
+static int check(int return_code);
+static int do_test(void);
+
+static key_desc_t get_str(void const *val)
 {
     record_t const *rec = val;
     return (key_desc_t) {
@@ -19,16 +39,7 @@ key_desc_t get_str(void const *val)
     };
 }
 
-key_desc_t get_num(void const *val)
-{
-    record_t const *rec = val;
-    return (key_desc_t) {
-        .raw = &(rec->num),
-            .size = sizeof(int)
-    };
-}
-
-int test_create()
+static int test_create(void)
 {
     mhidx_ref idx = create_mhidx(1024, 0);
     if(!is_valid_ref(idx)) 
@@ -37,7 +48,7 @@ int test_create()
     return 0;
 }
 
-int test_destroy()
+static int test_destroy(void)
 {
     mhidx_ref idx = create_mhidx(1024, 0);
     assert(is_valid_ref(idx));
@@ -45,7 +56,7 @@ int test_destroy()
     return !is_valid_ref(idx) ? 0 : 1;
 }
 
-int test_size()
+static int test_size(void)
 {
     int result = 0;
     mhidx_ref idx = create_mhidx(1024, 0);
@@ -55,7 +66,7 @@ int test_size()
     return result;
 }
 
-int test_insert_no_collision()
+static int test_insert_no_collision(void)
 {
     int result = 0;
     mhidx_ref idx = create_mhidx(1024, &get_str);
@@ -75,7 +86,7 @@ int test_insert_no_collision()
     return result;
 }
 
-int test_insert_collision()
+static int test_insert_collision(void)
 {
     int result = 0;
     mhidx_ref idx = create_mhidx(1024, &get_str);
@@ -95,7 +106,7 @@ int test_insert_collision()
     return result;
 }
 
-int test_remove()
+static int test_remove(void)
 {
     int result = 0;
     mhidx_ref idx = create_mhidx(1024, &get_str);
@@ -117,7 +128,7 @@ int test_remove()
     return result;
 }
 
-int test_remove_collision()
+static int test_remove_collision(void)
 {
     int result = 0;
     mhidx_ref idx = create_mhidx(1024, &get_str);
@@ -147,7 +158,7 @@ int test_remove_collision()
     return result;
 }
 
-int check(int return_code)
+static int check(int return_code)
 {
     if (return_code) 
         printf("fail\n");
@@ -156,7 +167,7 @@ int check(int return_code)
     return return_code;
 }
 
-int main()
+static int do_test(void)
 {
     int failed = 0;
     int total = 0;
@@ -178,5 +189,39 @@ int main()
     printf("failure: %d passed: %d total: %d\n",
            failed, total - failed, total);
 
-    return 0;
+    return failed == 0;
+
 }
+
+#ifdef KLD_MODULE
+static int load(struct module *module, int event, void *arg)
+{
+    int ec = 0;
+    switch(event) {
+    case MOD_LOAD:
+        ec = do_test();
+    break;
+    case MOD_UNLOAD:
+    break;
+    default:
+        ec = EOPNOTSUPP;
+    break;
+    }
+    return ec;
+}
+
+static moduledata_t module = {
+    "hidx_test",
+    load,
+    NULL
+};
+
+DECLARE_MODULE(hidx_test, module, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
+MODULE_DEPEND(hidx_test, hidx, 1, 1, 1);
+
+#else
+int main(void)
+{
+    return do_test();
+}
+#endif

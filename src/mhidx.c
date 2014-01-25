@@ -1,9 +1,17 @@
 #include "hidx.h"
-#include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include "hash.h"
 #include "encap.h"
+#include "compat.h"
+
+#ifdef KLD_MODULE
+#include <sys/param.h>
+#include <sys/kernel.h>
+
+MALLOC_DEFINE(HIDX_M_INSTANCE, "mhidx_instance", "multi-hidx instance");
+MALLOC_DEFINE(HIDX_M_ENTRIES, "mhidx_entries", "multi-hidx entries");
+
+#endif
 
 struct mhidx_impl
 {
@@ -43,7 +51,7 @@ mhidx_ref create_mhidx(size_t entry_num, hkey_extractor_cb extractor)
     return (mhidx_ref) {
         .fnptr_ = &mhidx_fnptr_,
         .inst_ = mhidx_fnptr_.ctor(entry_num, extractor)
-    };  
+    };
 }
 
 void destroy_mhidx(mhidx_ref *ref)
@@ -54,17 +62,17 @@ void destroy_mhidx(mhidx_ref *ref)
 
 static mhidx_impl_t *mhidx_ctor(size_t entry_num, hkey_extractor_cb extractor)
 {
-    mhidx_impl_t *inst = malloc(sizeof(mhidx_impl_t));
+    mhidx_impl_t *inst = HIDX_MALLOC_(sizeof(mhidx_impl_t), HIDX_M_INSTANCE);
     if (0 == inst) 
         return 0;
 
     (*inst) = (mhidx_impl_t) {
         .size = entry_num,
-        .entry = calloc(entry_num, sizeof(bucket_ref)),
+        .entry = HIDX_CALLOC_(entry_num, sizeof(bucket_ref), HIDX_M_ENTRIES),
         .extractor = extractor
     };
     if (0 == inst->entry) {
-        free(inst);
+        HIDX_FREE_(inst, HIDX_M_INSTANCE);
         return 0;
     }
     for (size_t i = 0; i < entry_num; ++i ) {
@@ -73,8 +81,8 @@ static mhidx_impl_t *mhidx_ctor(size_t entry_num, hkey_extractor_cb extractor)
             for(size_t j=0; j < i; ++j) {
                 destroy_bucket(&inst->entry[j]);
             }
-            free(inst->entry);
-            free(inst);
+            HIDX_FREE_(inst->entry, HIDX_M_ENTRIES);
+            HIDX_FREE_(inst, HIDX_M_INSTANCE);
             return 0;
         }
         assert(0 == call(inst->entry[i], size));
@@ -95,12 +103,12 @@ static void mhidx_dtor(mhidx_impl_t* inst)
         for ( size_t j = 0; j < call(collisions, size); ++j) {
             bucket_ref *bk = (bucket_ref*)call_n(collisions, at, j);
             destroy_bucket(bk);
-            free(bk);
+            HIDX_FREE_(bk, HIDX_BUCKET_REF);
         }
         destroy_bucket(&collisions);
     }
-    free(inst->entry);
-    free(inst);
+    HIDX_FREE_(inst->entry, HIDX_M_ENTRIES);
+    HIDX_FREE_(inst, HIDX_M_INSTANCE);
 }
 
 static bool mhidx_insert(mhidx_impl_t* inst, void const *val)
@@ -116,7 +124,7 @@ static bool mhidx_insert(mhidx_impl_t* inst, void const *val)
         if ( 0 == call(*bucket, size) ) {
             call_n(collisions, remove, i--);
             destroy_bucket(bucket);
-            free(bucket);
+            HIDX_FREE_(bucket, HIDX_BUCKET_REF);
             continue;
         }
         key_desc_t curkey = inst->extractor(call_n(*bucket, at, 0));
@@ -130,7 +138,7 @@ static bool mhidx_insert(mhidx_impl_t* inst, void const *val)
         }
     }
     if (!result) {
-        bucket_ref *bucket = malloc(sizeof(bucket_ref));
+        bucket_ref *bucket = HIDX_MALLOC_(sizeof(bucket_ref), HIDX_BUCKET_REF);
         *bucket = create_bucket();
         if(is_valid_ref(*bucket) && 
            call_n(*bucket, append, val) &&
@@ -155,7 +163,7 @@ static void mhidx_remove(mhidx_impl_t* inst, key_desc_t key)
         if ( 0 == call(*bucket, size) ) {
             call_n(collisions, remove, i--);
             destroy_bucket(bucket);
-            free(bucket);
+            HIDX_FREE_(bucket, HIDX_BUCKET_REF);
             continue;
         }
         key_desc_t curkey = inst->extractor(call_n(*bucket, at, 0));
@@ -164,7 +172,7 @@ static void mhidx_remove(mhidx_impl_t* inst, key_desc_t key)
         {
             call_n(collisions, remove, i);
             destroy_bucket(bucket);
-            free(bucket);
+            HIDX_FREE_(bucket, HIDX_BUCKET_REF);
             return;
         }
     }
@@ -194,7 +202,7 @@ static bucket_ref mhidx_find(mhidx_impl_t const* inst, key_desc_t key)
         if ( 0 == call(*bucket, size) ) {
             call_n(collisions, remove, i--);
             destroy_bucket(bucket);
-            free(bucket);
+            HIDX_FREE_(bucket, HIDX_BUCKET_REF);
             continue;
         }
         key_desc_t curkey = inst->extractor(call_n(*bucket, at, 0));

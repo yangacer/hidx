@@ -1,0 +1,5 @@
+KMOD = hidx_test
+SRCS = test_mhidx.c
+CFLAGS += -I../include -I/usr/include
+
+.include <bsd.kmod.mk>

@@ -1,6 +1,11 @@
 #ifndef HASH_INDEX_BUCKET_H_
 #define HASH_INDEX_BUCKET_H_
+
+#ifdef KLD_MODULE
+#include <sys/types.h>
+#else
 #include <stddef.h>
+#endif
 #include <stdbool.h>
 
 struct bucket_impl;
@@ -27,7 +32,7 @@ typedef struct bucket
     struct bucket_impl *inst_;
 } bucket_ref;
 
-bucket_ref create_bucket();
+bucket_ref create_bucket(void);
 void destroy_bucket(bucket_ref *ref);
 
 #endif

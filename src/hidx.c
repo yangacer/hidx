@@ -1,9 +1,17 @@
 #include "hidx.h"
-#include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include "hash.h"
 #include "encap.h"
+#include "compat.h"
+
+#ifdef KLD_MODULE
+#include <sys/param.h>
+#include <sys/kernel.h>
+
+MALLOC_DEFINE(HIDX_INSTANCE, "hidx_instance", "hidx instance");
+MALLOC_DEFINE(HIDX_ENTRIES, "hidx_entries", "hidx entries");
+
+#endif
 
 struct hidx_impl 
 {
@@ -53,17 +61,17 @@ void destroy_hidx(hidx_ref *ref)
 
 static hidx_impl_t *hidx_ctor(size_t entry_num, hkey_extractor_cb extractor)
 {
-    hidx_impl_t *inst = malloc(sizeof(hidx_impl_t));
+    hidx_impl_t *inst = HIDX_MALLOC_(sizeof(hidx_impl_t), HIDX_INSTANCE);
     if (0 == inst) 
         return 0;
 
     (*inst) = (hidx_impl_t) {
         .size = entry_num,
-        .entry = calloc(entry_num, sizeof(bucket_ref)),
+        .entry = HIDX_CALLOC_(entry_num, sizeof(bucket_ref), HIDX_ENTRIES),
         .extractor = extractor
     };
     if (0 == inst->entry) {
-        free(inst);
+        HIDX_FREE_(inst, HIDX_INSTANCE);
         return 0;
     }
     for (size_t i = 0; i < entry_num; ++i ) {
@@ -72,8 +80,8 @@ static hidx_impl_t *hidx_ctor(size_t entry_num, hkey_extractor_cb extractor)
             for(size_t j=0; j < i; ++j) {
                 destroy_bucket(&inst->entry[j]);
             }
-            free(inst->entry);
-            free(inst);
+            HIDX_FREE_(inst->entry, HIDX_ENTRIES);
+            HIDX_FREE_(inst, HIDX_INSTANCE);
             return 0;
         }
         assert(0 == call(inst->entry[i], size));
@@ -89,8 +97,8 @@ static void hidx_dtor(hidx_impl_t* inst)
     for (size_t i = 0; i < inst->size; ++i) {
         destroy_bucket(inst->entry + i);
     }
-    free(inst->entry);
-    free(inst);
+    HIDX_FREE_(inst->entry, HIDX_ENTRIES);
+    HIDX_FREE_(inst, HIDX_INSTANCE);
 }
 
 static bool hidx_insert(hidx_impl_t* inst, void const *val)

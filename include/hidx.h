@@ -1,8 +1,6 @@
 #ifndef HASH_INDEX_H_
 #define HASH_INDEX_H_
 
-#include <stdbool.h>
-#include <stddef.h>
 #include "bucket.h"
 #include "hash.h"
 

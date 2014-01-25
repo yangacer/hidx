@@ -1,7 +1,17 @@
 #include "bucket.h"
 #include <stdint.h>
-#include <stdlib.h>
-#include <assert.h>
+
+#include "compat.h"
+
+#ifdef KLD_MODULE
+#include <sys/param.h>
+#include <sys/kernel.h>
+
+MALLOC_DEFINE(HIDX_BUCKET_INSTANCE, "hidx_bucket", "hidx bucket impl pointer");
+MALLOC_DEFINE(HIDX_BUCKET_STORAGE, "hidx_bucket_storage", "hidx bucket storage");
+MALLOC_DEFINE(HIDX_BUCKET_REF, "hidx_bucket_ref", "hidx bucket reference");
+
+#endif
 
 struct bucket_impl
 {
@@ -62,16 +72,16 @@ void destroy_bucket(bucket_ref *ref)
 
 bucket_impl_t *bucket_ctor()
 {
-    bucket_impl_t *inst = malloc(sizeof(bucket_impl_t));
+    bucket_impl_t *inst = HIDX_MALLOC_(sizeof(bucket_impl_t), HIDX_BUCKET_INSTANCE);
     if (0 == inst)
         return 0;
     (*inst) = (bucket_impl_t) {
-        .storage = calloc(fib_table_[0], sizeof(void const*)),
+        .storage = HIDX_CALLOC_(fib_table_[0], sizeof(void const*), HIDX_BUCKET_STORAGE),
         .fib_idx = 0,
         .size = 0,
     };
     if (0 == inst->storage) {
-        free(inst);
+        HIDX_FREE_(inst, HIDX_BUCKET_INSTANCE);
         return 0;
     }
     return inst;
@@ -79,8 +89,8 @@ bucket_impl_t *bucket_ctor()
 
 void bucket_dtor(bucket_impl_t *inst)
 {
-    free(inst->storage);
-    free(inst);
+    HIDX_FREE_(inst->storage, HIDX_BUCKET_STORAGE);
+    HIDX_FREE_(inst, HIDX_BUCKET_INSTANCE);
 }
 
 bool bucket_append(bucket_impl_t *inst, void const *val)
@@ -92,9 +102,10 @@ bool bucket_append(bucket_impl_t *inst, void const *val)
         if ( inst->fib_idx + 1 == FIBTABLESIZE)
             return false;
         void const** orig = inst->storage;
-        inst->storage = realloc(inst->storage,
+        inst->storage = HIDX_REALLOC_(inst->storage,
                                 sizeof(void const*) *
-                                fib_table_[inst->fib_idx + 1]);
+                                fib_table_[inst->fib_idx + 1],
+                                HIDX_BUCKET_STORAGE);
         if( 0 == inst->storage) {
             inst->storage = orig;
             return false;
