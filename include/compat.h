@@ -5,6 +5,7 @@
 
 #include <sys/types.h>
 #include <sys/malloc.h>
+#include <sys/libkern.h>
 #define assert(...) {}
 
 MALLOC_DECLARE(HIDX_BUCKET_INSTANCE);
@@ -24,6 +25,8 @@ MALLOC_DECLARE(HIDX_M_ENTRIES);
             // BEGIN non kernel
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 #include <assert.h>
 
 #define HIDX_MALLOC_(SIZE, M_TYPE) malloc(SIZE)

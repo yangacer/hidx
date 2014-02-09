@@ -1,6 +1,4 @@
 #include "bucket.h"
-#include <stdint.h>
-
 #include "compat.h"
 
 #ifdef KLD_MODULE

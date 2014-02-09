@@ -5,8 +5,8 @@
 #include <sys/types.h>
 #else
 #include <stddef.h>
-#endif
 #include <stdbool.h>
+#endif
 
 struct bucket_impl;
 typedef struct bucket_impl bucket_impl_t;

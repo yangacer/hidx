@@ -1,5 +1,4 @@
 #include "hidx.h"
-#include <string.h>
 #include "hash.h"
 #include "encap.h"
 #include "compat.h"

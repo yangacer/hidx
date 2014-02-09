@@ -1,6 +1,6 @@
 KMOD = hidx
 SRCS = hidx.c bucket.c mhidx.c kld.c
-CFLAGS += -I../include -I/usr/include 
+CFLAGS += -I../include 
 
 .include <bsd.kmod.mk>
 
