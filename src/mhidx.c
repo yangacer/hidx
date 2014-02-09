@@ -101,7 +101,7 @@ static void mhidx_dtor(mhidx_impl_t* inst)
         bucket_ref collisions = inst->entry[i];
         assert(collisions.inst_ != 0);
         for ( size_t j = 0; j < call(collisions, size); ++j) {
-            bucket_ref *bk = (bucket_ref*)call_n(collisions, at, j);
+            bucket_ref *bk = (bucket_ref*)call(collisions, at, j);
             destroy_bucket(bk);
             HIDX_FREE_(bk, HIDX_BUCKET_REF);
         }
@@ -118,20 +118,20 @@ static bool mhidx_insert(mhidx_impl_t* inst, void const *val)
     size_t offset = hash(key, inst->size);
     bucket_ref collisions = inst->entry[offset];
     for(size_t i = 0 ; i < call(collisions, size); ++i) {
-        bucket_ref *bucket = (bucket_ref*)call_n(collisions, at, i);
+        bucket_ref *bucket = (bucket_ref*)call(collisions, at, i);
         // XXX There is a chance an user has removed all values in a bucket,
         // we have to remove it.
         if ( 0 == call(*bucket, size) ) {
-            call_n(collisions, remove, i--);
+            call(collisions, remove, i--);
             destroy_bucket(bucket);
             HIDX_FREE_(bucket, HIDX_BUCKET_REF);
             continue;
         }
-        key_desc_t curkey = inst->extractor(call_n(*bucket, at, 0));
+        key_desc_t curkey = inst->extractor(call(*bucket, at, 0));
         if (curkey.size == key.size &&
             0 == memcmp(curkey.raw, key.raw, curkey.size))
         {
-            if(!call_n(*bucket, append, val))
+            if(!call(*bucket, append, val))
                 return false;
             result = true;
             break;
@@ -141,8 +141,8 @@ static bool mhidx_insert(mhidx_impl_t* inst, void const *val)
         bucket_ref *bucket = HIDX_MALLOC_(sizeof(bucket_ref), HIDX_BUCKET_REF);
         *bucket = create_bucket();
         if(is_valid_ref(*bucket) && 
-           call_n(*bucket, append, val) &&
-           call_n(collisions, append, bucket)) 
+           call(*bucket, append, val) &&
+           call(collisions, append, bucket)) 
         {
             result = true;
         } else {
@@ -157,20 +157,20 @@ static void mhidx_remove(mhidx_impl_t* inst, key_desc_t key)
     size_t offset = hash(key, inst->size);
     bucket_ref collisions = inst->entry[offset];
     for(size_t i = 0 ; i < call(collisions, size); ++i) {
-        bucket_ref *bucket = (bucket_ref*)call_n(collisions, at, i);
+        bucket_ref *bucket = (bucket_ref*)call(collisions, at, i);
         // XXX There is a chance user remove all values in a bucket,
         // we have to remove it.
         if ( 0 == call(*bucket, size) ) {
-            call_n(collisions, remove, i--);
+            call(collisions, remove, i--);
             destroy_bucket(bucket);
             HIDX_FREE_(bucket, HIDX_BUCKET_REF);
             continue;
         }
-        key_desc_t curkey = inst->extractor(call_n(*bucket, at, 0));
+        key_desc_t curkey = inst->extractor(call(*bucket, at, 0));
         if (curkey.size == key.size &&
             0 == memcmp(curkey.raw, key.raw, curkey.size))
         {
-            call_n(collisions, remove, i);
+            call(collisions, remove, i);
             destroy_bucket(bucket);
             HIDX_FREE_(bucket, HIDX_BUCKET_REF);
             return;
@@ -196,16 +196,16 @@ static bucket_ref mhidx_find(mhidx_impl_t const* inst, key_desc_t key)
     size_t offset = hash(key, inst->size);
     bucket_ref collisions = inst->entry[offset];
     for(size_t i = 0 ; i < call(collisions, size); ++i) {
-        bucket_ref *bucket = ((bucket_ref*)call_n(collisions, at, i));
+        bucket_ref *bucket = ((bucket_ref*)call(collisions, at, i));
         // XXX There is a chance user remove all values in a bucket,
         // we have to remove it.
         if ( 0 == call(*bucket, size) ) {
-            call_n(collisions, remove, i--);
+            call(collisions, remove, i--);
             destroy_bucket(bucket);
             HIDX_FREE_(bucket, HIDX_BUCKET_REF);
             continue;
         }
-        key_desc_t curkey = inst->extractor(call_n(*bucket, at, 0));
+        key_desc_t curkey = inst->extractor(call(*bucket, at, 0));
         if (curkey.size == key.size &&
             0 == memcmp(curkey.raw, key.raw, curkey.size))
         {
