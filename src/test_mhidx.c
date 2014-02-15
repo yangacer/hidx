@@ -189,8 +189,7 @@ static int do_test(void)
     printf("failure: %d passed: %d total: %d\n",
            failed, total - failed, total);
 
-    return failed == 0;
-
+    return failed;
 }
 
 #ifdef KLD_MODULE
