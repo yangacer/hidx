@@ -36,7 +36,7 @@ int test_append()
     bucket_ref bk = create_bucket();
     assert (bk.inst_ != 0);
     int value = 123;
-    call_n(bk, append, &value);
+    call(bk, append, &value);
     result = (1 == call(bk, size)) ? 0 : 1;
     destroy_bucket(&bk);
     assert (bk.inst_ == 0);
@@ -50,7 +50,7 @@ int test_append_cause_expand()
     assert (bk.inst_ != 0);
     int value[5] = {0, 2, 4, 6, 8};
     for (int i =0; i < 5; ++i)
-        call_n(bk, append, &value[i]);
+        call(bk, append, &value[i]);
     result = (5 == call(bk, size)) ? 0 : 1;
     destroy_bucket(&bk);
     assert (bk.inst_ == 0);
@@ -64,11 +64,11 @@ int test_at()
     assert (bk.inst_ != 0);
     int value[5] = {0, 2, 4, 6, 8};
     for (int i =0; i < 5; ++i)
-        call_n(bk, append, &value[i]);
+        call(bk, append, &value[i]);
     assert(5 == call(bk, size));
 
     for (int i =0; i < 5; ++i) {
-        if ( call_n(bk, at, i) != &(value[i]))
+        if ( call(bk, at, i) != &(value[i]))
             result = 1;
     }
 
@@ -84,11 +84,11 @@ int test_traverse()
     assert (bk.inst_ != 0);
     int value[5] = {0, 2, 4, 6, 8};
     for (int i =0; i < 5; ++i)
-        call_n(bk, append, &value[i]);
+        call(bk, append, &value[i]);
     assert(5 == call(bk, size));
 
     for (int i =0; i < call(bk, size); ++i) {
-        int const* v = call_n(bk, at, i);
+        int const* v = call(bk, at, i);
         if( *v != value[i] )
             result = 1;
     }
@@ -106,9 +106,9 @@ int test_remove()
     assert (bk.inst_ != 0);
     int value[5] = {0, 2, 4, 6, 8};
     for (int i =0; i < 5; ++i)
-        call_n(bk, append, &value[i]);
+        call(bk, append, &value[i]);
     assert(5 == call(bk, size));
-    call_n(bk, remove, 2);
+    call(bk, remove, 2);
     result = (4 == call(bk, size)) ? 0 : 1;
     destroy_bucket(&bk);
     assert (bk.inst_ == 0);
@@ -122,12 +122,12 @@ int test_remove_in_traverse()
     assert (bk.inst_ != 0);
     int value[7] = {9, 1, 2, 4, 6, 8, 7};
     for (int i =0; i < 7; ++i)
-        call_n(bk, append, &value[i]);
+        call(bk, append, &value[i]);
     assert(7 == call(bk, size));
     for (size_t i =0 ; i < call(bk, size); ++i) {
-        int const *v = call_n(bk, at, i);
+        int const *v = call(bk, at, i);
         if (*v % 2) {
-            call_n(bk, remove, i);
+            call(bk, remove, i);
             i--;
         }
     }
@@ -144,11 +144,11 @@ int test_remove_all()
     assert (bk.inst_ != 0);
     int value[5] = {0, 2, 4, 6, 8};
     for (int i =0; i < 5; ++i)
-        call_n(bk, append, &value[i]);
+        call(bk, append, &value[i]);
     assert(5 == call(bk, size));
 
     while(call(bk, size))
-        call_n(bk, remove, 0);
+        call(bk, remove, 0);
     result = (0 == call(bk, size)) ? 0 : 1;
     destroy_bucket(&bk);
     assert (bk.inst_ == 0);
@@ -162,11 +162,11 @@ int test_remove_keep_order()
     assert (bk.inst_ != 0);
     int value[5] = {0, 2, 4, 6, 8};
     for (int i =0; i < 5; ++i)
-        call_n(bk, append, &value[i]);
+        call(bk, append, &value[i]);
     assert(5 == call(bk, size));
-    call_n(bk, remove_keep_order, 2);
+    call(bk, remove_keep_order, 2);
     assert(4 == call(bk, size));
-    result = (6 == *(int const*)call_n(bk, at, 2)) ? 0 : 1;
+    result = (6 == *(int const*)call(bk, at, 2)) ? 0 : 1;
     destroy_bucket(&bk);
     assert (bk.inst_ == 0);
     return result;
@@ -179,11 +179,11 @@ int test_remove_keep_order_all()
     assert (bk.inst_ != 0);
     int value[5] = {0, 2, 4, 6, 8};
     for (int i =0; i < 5; ++i)
-        call_n(bk, append, &value[i]);
+        call(bk, append, &value[i]);
     assert(5 == call(bk, size));
 
     while(call(bk, size))
-        call_n(bk, remove_keep_order, 0);
+        call(bk, remove_keep_order, 0);
     result = (0 == call(bk, size)) ? 0 : 1;
     destroy_bucket(&bk);
     assert (bk.inst_ == 0);

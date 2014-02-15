@@ -77,10 +77,10 @@ static int test_insert_no_collision(void)
     r[2] = (record_t) {.str = "benq", .strsize = 4, .num = 3};
 
     for (int i=0; i < 3; i++)
-        call_n(idx, insert, &r[i]);
+        call(idx, insert, &r[i]);
 
     for (int i=0; i < 3 && result == 0; i++) {
-        result = ( 1 == call_n(idx, count, get_str(&r[i]))) ? 0 : 1;
+        result = ( 1 == call(idx, count, get_str(&r[i]))) ? 0 : 1;
     }
     destroy_mhidx(&idx);
     return result;
@@ -97,10 +97,10 @@ static int test_insert_collision(void)
     r[2] = (record_t) {.str = "aaaa", .strsize = 4, .num = 3};
 
     for(int i =0; i <3; ++i)
-        call_n(idx, insert, &r[i]);
+        call(idx, insert, &r[i]);
 
     for (int i=0; i < 3 && result == 0; i++) {
-        result = (1 == call_n(idx, count, get_str(&r[i]))) ? 0 : 1;
+        result = (1 == call(idx, count, get_str(&r[i]))) ? 0 : 1;
     }
     destroy_mhidx(&idx);
     return result;
@@ -117,11 +117,11 @@ static int test_remove(void)
     r[2] = (record_t) {.str = "benq", .strsize = 4, .num = 3};
 
     for (int i=0; i < 3; i++)
-        call_n(idx, insert, &r[i]);
+        call(idx, insert, &r[i]);
 
     for (int i=0; i < 3 && result == 0; i++) {
-        call_n(idx, remove, get_str(&r[i]));
-        result = (0 == call_n(idx, count, get_str(&r[i]))) ? 0 : 1;
+        call(idx, remove, get_str(&r[i]));
+        result = (0 == call(idx, count, get_str(&r[i]))) ? 0 : 1;
     }
 
     destroy_mhidx(&idx);
@@ -139,20 +139,20 @@ static int test_remove_collision(void)
     r[2] = (record_t) {.str = "aaaa", .strsize = 4, .num = 3};
 
     for (int i=0; i < 3; i++)
-        call_n(idx, insert, &r[i]);
+        call(idx, insert, &r[i]);
 
     for (int i=0; i < 3 ; i++) {
-        assert(0 != call_n(idx, count, get_str(&r[i])));
+        assert(0 != call(idx, count, get_str(&r[i])));
     }
-    call_n(idx, remove, get_str(&r[1]));
-    assert( 1 == call_n(idx, count, get_str(&r[0])) );
-    assert( 0 == call_n(idx, count, get_str(&r[1])) );
-    assert( 1 == call_n(idx, count, get_str(&r[2])) );
+    call(idx, remove, get_str(&r[1]));
+    assert( 1 == call(idx, count, get_str(&r[0])) );
+    assert( 0 == call(idx, count, get_str(&r[1])) );
+    assert( 1 == call(idx, count, get_str(&r[2])) );
 
     r[1].str = "aqua";
-    result = call_n(idx, insert, &r[1]) ? 0 : 1;
+    result = call(idx, insert, &r[1]) ? 0 : 1;
     for (int i=0; i < 3 && result == 0; ++i) {
-        result = (1 == call_n(idx, count, get_str(&r[i]))) ? 0 : 1;
+        result = (1 == call(idx, count, get_str(&r[i]))) ? 0 : 1;
     }
     destroy_mhidx(&idx);
     return result;

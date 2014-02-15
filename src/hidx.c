@@ -1,5 +1,4 @@
 #include "hidx.h"
-#include <string.h>
 #include "hash.h"
 #include "encap.h"
 #include "compat.h"
@@ -108,7 +107,7 @@ static bool hidx_insert(hidx_impl_t* inst, void const *val)
     bucket_ref collisions = inst->entry[offset];
     // search for dup in collisions
     for (size_t i = 0; i < call(collisions, size); ++i) {
-        void const *curval = call_n(collisions, at, i);
+        void const *curval = call(collisions, at, i);
         key_desc_t curkey = inst->extractor(curval);
         if ( curkey.size == key.size && 
              0 == memcmp(curkey.raw, key.raw, curkey.size ))
@@ -117,7 +116,7 @@ static bool hidx_insert(hidx_impl_t* inst, void const *val)
             return false;
         } 
     }
-    return call_n(collisions, append, val);
+    return call(collisions, append, val);
 }
 
 static void hidx_remove(hidx_impl_t* inst, key_desc_t key)
@@ -126,12 +125,12 @@ static void hidx_remove(hidx_impl_t* inst, key_desc_t key)
     bucket_ref collisions = inst->entry[offset];
     // search for dup in collisions
     for (size_t i = 0; i < call(collisions, size); ++i) {
-        void const *curval = call_n(collisions, at, i);
+        void const *curval = call(collisions, at, i);
         key_desc_t curkey = inst->extractor(curval);
         if ( curkey.size == key.size && 
              0 == memcmp(curkey.raw, key.raw, curkey.size ))
         {
-            call_n(collisions, remove, i);
+            call(collisions, remove, i);
             return;
         } 
     }
@@ -153,7 +152,7 @@ static void const *hidx_find(hidx_impl_t const* inst, key_desc_t key)
     bucket_ref collisions = inst->entry[offset];
     // search for dup in collisions
     for (size_t i = 0; i < call(collisions, size); ++i) {
-        void const *curval = call_n(collisions, at, i);
+        void const *curval = call(collisions, at, i);
         key_desc_t curkey = inst->extractor(curval);
         if ( curkey.size == key.size && 
              0 == memcmp(curkey.raw, key.raw, curkey.size ))
