@@ -1,3 +1,7 @@
+
+// Copyright 2022 YANG, YUN-TSE (yangacer).
+// Distributed under the Boost Software License, Version 1.0.
+
 #ifndef HASH_INDEX_BUCKET_H_
 #define HASH_INDEX_BUCKET_H_
 

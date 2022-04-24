@@ -1,3 +1,7 @@
+
+// Copyright 2022 YANG, YUN-TSE (yangacer).
+// Distributed under the Boost Software License, Version 1.0.
+
 #include <sys/kernel.h>
 #include <sys/module.h>
 #include <sys/param.h>

@@ -1,3 +1,7 @@
+
+// Copyright 2022 YANG, YUN-TSE (yangacer).
+// Distributed under the Boost Software License, Version 1.0.
+
 #ifndef HIDX_COMPATIBILITY_H_
 #define HIDX_COMPATIBILITY_H_
 
