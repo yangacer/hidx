@@ -1,7 +1,7 @@
 #include <chrono>
 #include <iostream>
 #include <random>
-#include <unordered_map>
+#include <unordered_set>
 
 extern "C" {
 #include "hidx/encap.h"
@@ -39,15 +39,25 @@ int main(int argc, char**argv) {
     std::cout << "[unordered set]\n";
     ElapsedTimer timer;
 
-    std::unordered_map<std::string, std::string*> us;
+    struct Hash {
+      std::hash<std::string> impl_;
+      size_t operator()(const std::string* ptr) const { return impl_(*ptr); }
+    };
+    struct Equal {
+      bool operator()(const std::string* lhs, const std::string* rhs) const {
+        return *lhs == *rhs;
+      }
+    };
+
+    std::unordered_set<std::string*, Hash, Equal> us;
     us.reserve(data_count * 0.7);
     for (auto& i : data)
-      us.emplace(i, &i);
+      us.emplace(&i);
     std::cout << " insert=" << timer.elapsed().count() << std::endl;
 
     timer.reset();
     for (auto i : data) {
-      if(!us.count(i))
+      if(!us.count(&i))
         abort();
     }
     std::cout << " count=" << timer.elapsed().count() << std::endl;
