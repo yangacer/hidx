@@ -1,12 +1,13 @@
 #ifndef HIDX_COMPATIBILITY_H_
 #define HIDX_COMPATIBILITY_H_
 
-#ifdef KLD_MODULE // BEGIN kernel
+#ifdef KLD_MODULE  // BEGIN kernel
 
-#include <sys/types.h>
-#include <sys/malloc.h>
 #include <sys/libkern.h>
-#define assert(...) {}
+#include <sys/malloc.h>
+#include <sys/types.h>
+#define assert(...) \
+  {}
 
 MALLOC_DECLARE(HIDX_BUCKET_INSTANCE);
 MALLOC_DECLARE(HIDX_BUCKET_STORAGE);
@@ -18,16 +19,17 @@ MALLOC_DECLARE(HIDX_M_ENTRIES);
 
 #define HIDX_MALLOC_(SIZE, M_TYPE) malloc(SIZE, M_TYPE, M_ZERO | M_NOWAIT)
 #define HIDX_REALLOC_(ADDR, SIZE, M_TYPE) realloc(ADDR, SIZE, M_TYPE, M_NOWAIT);
-#define HIDX_CALLOC_(NUM, TYPE_SIZE, M_TYPE) malloc(NUM * TYPE_SIZE, M_TYPE, M_ZERO | M_NOWAIT)
+#define HIDX_CALLOC_(NUM, TYPE_SIZE, M_TYPE) \
+  malloc(NUM* TYPE_SIZE, M_TYPE, M_ZERO | M_NOWAIT)
 #define HIDX_FREE_(ADDR, M_TYPE) free(ADDR, M_TYPE);
 
-#else       // END
-            // BEGIN non kernel
+#else  // END
+       // BEGIN non kernel
 
+#include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <assert.h>
 
 #define HIDX_MALLOC_(SIZE, M_TYPE) malloc(SIZE)
 #define HIDX_REALLOC_(ADDR, SIZE, M_TYPE) realloc(ADDR, SIZE);
@@ -36,4 +38,4 @@ MALLOC_DECLARE(HIDX_M_ENTRIES);
 
 #endif  // END non kerenl
 
-#endif // END header guard
+#endif  // END header guard

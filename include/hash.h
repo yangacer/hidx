@@ -8,10 +8,9 @@
 /**
  * Key descriptor
  */
-typedef struct key_desc
-{
-    void const *raw;
-    size_t size;
+typedef struct key_desc {
+  void const* raw;
+  size_t size;
 } key_desc_t;
 
 /**
@@ -35,16 +34,15 @@ typedef key_desc_t (*hkey_extractor_cb)(void const* val);
 /**
  * Hash function
  */
-static inline size_t hash(key_desc_t key, size_t max)
-{
+static inline size_t hash(key_desc_t key, size_t max) {
 #ifdef CANONICAL_HASH
-    return ((unsigned char*)key.raw)[0];
+  return ((unsigned char*)key.raw)[0];
 #else
-    size_t hval = 5381;
-    for(size_t i = 0; i < key.size; ++i) {
-        hval = (hval << 5) + hval + ((unsigned char *)key.raw)[i];
-    }
-    return hval % max;
+  size_t hval = 5381;
+  for (size_t i = 0; i < key.size; ++i) {
+    hval = (hval << 5) + hval + ((unsigned char*)key.raw)[i];
+  }
+  return hval % max;
 #endif
 }
 
