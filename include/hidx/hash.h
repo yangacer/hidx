@@ -43,8 +43,9 @@ static inline size_t hash(key_desc_t key, size_t max) {
   return ((unsigned char*)key.raw)[0];
 #else
   size_t hval = 5381;
-  for (size_t i = 0; i < key.size; ++i) {
-    hval = (hval << 5) + hval + ((unsigned char*)key.raw)[i];
+  size_t word_size = key.size >> 2;
+  for (size_t i = 0; i < word_size; ++i) {
+    hval = (hval << 5) + hval + ((unsigned int*)key.raw)[i];
   }
   return hval % max;
 #endif
