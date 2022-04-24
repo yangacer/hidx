@@ -4,6 +4,7 @@ project(hidx VERSION 0.1.0 LANGUAGES C)
 
 add_subdirectory(include)
 add_subdirectory(src)
+add_subdirectory(perf)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CTest)
