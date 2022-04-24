@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
-#include "bucket.h"
-#include "encap.h"
+#include "hidx/bucket.h"
+#include "hidx/encap.h"
 
 int test_create()
 {

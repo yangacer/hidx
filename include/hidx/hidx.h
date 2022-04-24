@@ -1,8 +1,8 @@
 #ifndef HASH_INDEX_H_
 #define HASH_INDEX_H_
 
-#include "bucket.h"
-#include "hash.h"
+#include "hidx/bucket.h"
+#include "hidx/hash.h"
 
 // Forwarded decls
 struct hidx_impl;

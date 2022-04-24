@@ -1,7 +1,7 @@
-#include "hidx.h"
-#include "hash.h"
-#include "encap.h"
-#include "compat.h"
+#include "hidx/hidx.h"
+#include "hidx/compat.h"
+#include "hidx/encap.h"
+#include "hidx/hash.h"
 
 #ifdef KLD_MODULE
 #include <sys/param.h>

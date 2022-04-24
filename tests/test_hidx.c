@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
-#include "hidx.h"
-#include "encap.h"
+#include "hidx/hidx.h"
+#include "hidx/encap.h"
 
 typedef struct record
 {

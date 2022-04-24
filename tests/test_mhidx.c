@@ -1,5 +1,5 @@
-#include "hidx.h"
-#include "encap.h"
+#include "hidx/hidx.h"
+#include "hidx/encap.h"
 
 #ifdef KLD_MODULE
 #include <sys/param.h>

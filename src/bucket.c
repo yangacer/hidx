@@ -1,5 +1,5 @@
-#include "bucket.h"
-#include "compat.h"
+#include "hidx/bucket.h"
+#include "hidx/compat.h"
 
 #ifdef KLD_MODULE
 #include <sys/param.h>

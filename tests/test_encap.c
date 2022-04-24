@@ -18,7 +18,7 @@ struct ini
   char b;
 };
 
-#define FORWARD(func, arg1, ...) (func(arg1, __VA_ARGS__))
+#define FORWARD(func, arg1, ...) (func(arg1 __VA_OPT__(,)  __VA_ARGS__))
 
 void handler1(int a) { }
 void handler2(int a, int b) {}
