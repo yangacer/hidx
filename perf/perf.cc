@@ -82,6 +82,8 @@ int main(int argc, char**argv) {
     for (auto i : data)
       call(hi, count, {i.c_str(), i.size()});
     std::cout << " count=" << timer.elapsed().count() << std::endl;
+
+    destroy_hidx(&hi);
   }
 
   return 0;
