@@ -16,11 +16,11 @@ MALLOC_DEFINE(HIDX_M_ENTRIES, "mhidx_entries", "multi-hidx entries");
 
 #endif
 
-struct mhidx_impl {
+typedef struct mhidx_impl {
   size_t size;
   bucket_ref* entry;
   hkey_extractor_cb extractor;
-};
+} mhidx_impl_t;
 
 /**
  * Prototypes
@@ -34,6 +34,8 @@ static size_t mhidx_count(mhidx_impl_t const* inst, key_desc_t key);
 static size_t mhidx_size(mhidx_impl_t const* inst);
 static bucket_ref mhidx_find(mhidx_impl_t const* inst, key_desc_t key);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 static mhidx_interface_t mhidx_fnptr_ = {.ctor = &mhidx_ctor,
                                          .dtor = &mhidx_dtor,
                                          .insert = &mhidx_insert,
@@ -41,6 +43,7 @@ static mhidx_interface_t mhidx_fnptr_ = {.ctor = &mhidx_ctor,
                                          .count = &mhidx_count,
                                          .size = &mhidx_size,
                                          .find = &mhidx_find};
+#pragma GCC diagnostic pop
 
 /**
  * Implementations

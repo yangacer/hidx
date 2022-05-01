@@ -17,11 +17,11 @@ MALLOC_DEFINE(HIDX_BUCKET_REF, "hidx_bucket_ref", "hidx bucket reference");
 
 #endif
 
-struct bucket_impl {
+typedef struct bucket_impl {
   void const** storage;
   uint8_t fib_idx;
   uint32_t size;
-};
+} bucket_impl_t;
 
 /**
  * Prototypes
@@ -35,6 +35,8 @@ static void bucket_remove_keep_order(bucket_impl_t* inst, size_t offset);
 static void const* bucket_at(bucket_impl_t* inst, size_t offset);
 static size_t bucket_size(bucket_impl_t const* inst);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 static bucket_interface_t bucket_fnptr_ = {
     .ctor = &bucket_ctor,
     .dtor = &bucket_dtor,
@@ -43,6 +45,7 @@ static bucket_interface_t bucket_fnptr_ = {
     .remove_keep_order = &bucket_remove_keep_order,
     .at = &bucket_at,
     .size = &bucket_size};
+#pragma GCC diagnostic pop
 
 /**
  * Implementations

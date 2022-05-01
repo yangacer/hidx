@@ -12,25 +12,22 @@
 #include <stddef.h>
 #endif
 
-struct bucket_impl;
-typedef struct bucket_impl bucket_impl_t;
-
 /**
  * bucket - bucket for mhidx
  */
 typedef struct bucket_interface {
-  bucket_impl_t* (*ctor)();
-  void (*dtor)(bucket_impl_t*);
-  bool (*append)(bucket_impl_t*, void const* val);
-  void (*remove)(bucket_impl_t*, size_t offset);
-  void (*remove_keep_order)(bucket_impl_t*, size_t offset);
-  void const* (*at)(bucket_impl_t*, size_t offset);
-  size_t (*size)(bucket_impl_t const*);
+  void* (*ctor)();
+  void (*dtor)(void*);
+  bool (*append)(void*, void const* val);
+  void (*remove)(void*, size_t offset);
+  void (*remove_keep_order)(void*, size_t offset);
+  void const* (*at)(void*, size_t offset);
+  size_t (*size)(void const*);
 } bucket_interface_t;
 
 typedef struct bucket {
   bucket_interface_t* fnptr_;
-  struct bucket_impl* inst_;
+  void* inst_;
 } bucket_ref;
 
 bucket_ref create_bucket(void);
