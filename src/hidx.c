@@ -101,31 +101,17 @@ static bool hidx_insert(hidx_impl_t* inst, void const* val) {
   size_t offset = hash(key, inst->size);
   bucket_ref collisions = inst->entry[offset];
   // search for dup in collisions
-  for (size_t i = 0; i < call(collisions, size); ++i) {
-    void const* curval = call(collisions, at, i);
-    key_desc_t curkey = inst->extractor(curval);
-    if (curkey.size == key.size &&
-        0 == memcmp(curkey.raw, key.raw, curkey.size)) {
-      // duplicated key
-      return false;
-    }
-  }
+  if (call(collisions, find, key, inst->extractor))
+    return false;
   return call(collisions, append, val);
 }
 
 static void hidx_remove(hidx_impl_t* inst, key_desc_t key) {
   size_t offset = hash(key, inst->size);
   bucket_ref collisions = inst->entry[offset];
-  // search for dup in collisions
-  for (size_t i = 0; i < call(collisions, size); ++i) {
-    void const* curval = call(collisions, at, i);
-    key_desc_t curkey = inst->extractor(curval);
-    if (curkey.size == key.size &&
-        0 == memcmp(curkey.raw, key.raw, curkey.size)) {
-      call(collisions, remove, i);
-      return;
-    }
-  }
+  size_t target;
+  if (call(collisions, find_index, &target, key, inst->extractor))
+    call(collisions, remove, target);
 }
 
 static size_t hidx_count(hidx_impl_t const* inst, key_desc_t key) {
@@ -139,14 +125,5 @@ static size_t hidx_size(hidx_impl_t const* inst) {
 static void const* hidx_find(hidx_impl_t const* inst, key_desc_t key) {
   size_t offset = hash(key, inst->size);
   bucket_ref collisions = inst->entry[offset];
-  // search for dup in collisions
-  for (size_t i = 0; i < call(collisions, size); ++i) {
-    void const* curval = call(collisions, at, i);
-    key_desc_t curkey = inst->extractor(curval);
-    if (curkey.size == key.size &&
-        0 == memcmp(curkey.raw, key.raw, curkey.size)) {
-      return curval;
-    }
-  }
-  return 0;
+  return call(collisions, find, key, inst->extractor);
 }

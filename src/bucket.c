@@ -33,6 +33,13 @@ static bool bucket_append(bucket_impl_t* inst, void const* val);
 static void bucket_remove(bucket_impl_t* inst, size_t offset);
 static void bucket_remove_keep_order(bucket_impl_t* inst, size_t offset);
 static void const* bucket_at(bucket_impl_t* inst, size_t offset);
+static void const* bucket_find(bucket_impl_t* inst,
+                               key_desc_t key,
+                               hkey_extractor_cb extrator);
+static bool bucket_find_index(bucket_impl_t*,
+                              size_t* index,
+                              key_desc_t key,
+                              hkey_extractor_cb extractor);
 static size_t bucket_size(bucket_impl_t const* inst);
 
 #pragma GCC diagnostic push
@@ -44,6 +51,8 @@ static bucket_interface_t bucket_fnptr_ = {
     .remove = &bucket_remove,
     .remove_keep_order = &bucket_remove_keep_order,
     .at = &bucket_at,
+    .find = &bucket_find,
+    .find_index = &bucket_find_index,
     .size = &bucket_size};
 #pragma GCC diagnostic pop
 
@@ -51,16 +60,14 @@ static bucket_interface_t bucket_fnptr_ = {
  * Implementations
  */
 
-#define FIBTABLESIZE 44
-static uint32_t fib_table_[FIBTABLESIZE] = {
-    2,          3,         5,         8,         13,        21,
-    34,         55,        89,        144,       233,       377,
-    610,        987,       1597,      2584,      4181,      6765,
-    10946,      17711,     28657,     46368,     75025,     121393,
-    196418,     317811,    514229,    832040,    1346269,   2178309,
-    3524578,    5702887,   9227465,   14930352,  24157817,  39088169,
-    63245986,   102334155, 165580141, 267914296, 433494437, 701408733,
-    1134903170, 1836311903};
+static uint32_t fib_table_[] = {
+    16,        24,         48,         80,         128,       208,
+    336,       544,        880,        1424,       2304,      3728,
+    6032,      9760,       15792,      25552,      41344,     66896,
+    108240,    175136,     283376,     458512,     741888,    1200400,
+    1942288,   3142688,    5084976,    8227664,    13312640,  21540304,
+    34852944,  56393248,   91246192,   147639440,  238885632, 386525072,
+    625410704, 1011935776, 1637346480, 2649282256, 4286628736};
 
 bucket_ref create_bucket() {
   return (bucket_ref){.fnptr_ = &bucket_fnptr_, .inst_ = bucket_fnptr_.ctor()};
@@ -99,7 +106,7 @@ bool bucket_append(bucket_impl_t* inst, void const* val) {
 
   if (inst->size == fib_table_[inst->fib_idx]) {
     // expand
-    if (inst->fib_idx + 1 == FIBTABLESIZE)
+    if (inst->fib_idx + 1 == sizeof(fib_table_) / sizeof(uint32_t))
       return false;
     void const** orig = inst->storage;
     inst->storage = HIDX_REALLOC_(
@@ -139,6 +146,36 @@ void const* bucket_at(bucket_impl_t* inst, size_t offset) {
   if (offset >= inst->size)
     return 0;
   return inst->storage[offset];
+}
+
+void const* bucket_find(bucket_impl_t* inst,
+                        key_desc_t key,
+                        hkey_extractor_cb extractor) {
+  if (!inst->size)
+    return 0;
+  size_t index;
+  if (bucket_find_index(inst, &index, key, extractor))
+    return inst->storage[index];
+  return 0;
+}
+
+bool bucket_find_index(bucket_impl_t* inst,
+                       size_t* index,
+                       key_desc_t key,
+                       hkey_extractor_cb extractor) {
+  if (!inst->size)
+    return false;
+  size_t i = 0;
+  key_desc_t curkey;
+  do {
+    curkey = extractor(inst->storage[i]);
+    if (curkey.size == key.size &&
+        0 == memcmp(curkey.raw, key.raw, curkey.size)) {
+      *index = i;
+      return true;
+    }
+  } while (++i < inst->size);
+  return false;
 }
 
 size_t bucket_size(bucket_impl_t const* inst) {

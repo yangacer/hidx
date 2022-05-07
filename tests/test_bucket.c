@@ -76,6 +76,33 @@ int test_at() {
   return result;
 }
 
+key_desc_t get_int_key(void const* val) {
+  return (key_desc_t) {
+    .raw = val, .size = sizeof(int)
+  };
+}
+
+int test_find() {
+  int result = 0;
+  bucket_ref bk = create_bucket();
+  assert(bk.inst_ != 0);
+  int value[5] = {0, 2, 4, 6, 8};
+  for (int i = 0; i < 5; ++i)
+    call(bk, append, &value[i]);
+  assert(5 == call(bk, size));
+
+  for (int i = 0; i < 5; ++i) {
+    key_desc_t key = get_int_key(value +i);
+    if (call(bk, find, key, &get_int_key) != &(value[i]))
+      result = 1;
+  }
+
+  destroy_bucket(&bk);
+  assert(bk.inst_ == 0);
+
+  return result;
+}
+
 int test_traverse() {
   int result = 0;
   bucket_ref bk = create_bucket();
@@ -206,6 +233,7 @@ int main() {
   TEST(append);
   TEST(append_cause_expand);
   TEST(at);
+  TEST(find);
   TEST(traverse);
   TEST(remove);
   TEST(remove_in_traverse);
