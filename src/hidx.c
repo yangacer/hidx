@@ -3,10 +3,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 
 #include "hidx/hidx.h"
-#include "bucket_impl.h"
 #include "hidx/compat.h"
 #include "hidx/encap.h"
 #include "hidx/hash.h"
+#include "src/bucket_impl.h"
 
 #ifdef KLD_MODULE
 #include <sys/kernel.h>
