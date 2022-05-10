@@ -12,8 +12,9 @@ typedef struct bucket_impl {
 
 
 bucket_impl_t* bucket_ctor();
-bucket_impl_t* bucket_init(bucket_impl_t* inst);
 void bucket_dtor(bucket_impl_t* inst);
+bucket_impl_t* bucket_init(bucket_impl_t* inst);
+void bucket_deinit(bucket_impl_t* inst);
 bool bucket_append(bucket_impl_t* inst, void const* val);
 void bucket_remove(bucket_impl_t* inst, size_t offset);
 void bucket_remove_keep_order(bucket_impl_t* inst, size_t offset);

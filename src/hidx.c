@@ -91,6 +91,11 @@ static hidx_impl_t* hidx_ctor(size_t entry_num, hkey_extractor_cb extractor) {
 }
 
 void hidx_dtor(hidx_impl_t* inst) {
+  size_t i = 0;
+  while (i < inst->size) {
+    bucket_deinit(inst->entry + i);
+    ++i;
+  }
   HIDX_FREE_(inst->entry, HIDX_ENTRIES);
   HIDX_FREE_(inst, HIDX_INSTANCE);
 }

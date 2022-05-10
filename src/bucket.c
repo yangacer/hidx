@@ -64,6 +64,11 @@ bucket_impl_t* bucket_ctor() {
   return 0;
 }
 
+void bucket_dtor(bucket_impl_t* inst) {
+  bucket_deinit(inst);
+  HIDX_FREE_(inst, HIDX_BUCKET_INSTANCE);
+}
+
 bucket_impl_t* bucket_init(bucket_impl_t* inst) {
   (*inst) = (bucket_impl_t){
       .storage =
@@ -74,9 +79,8 @@ bucket_impl_t* bucket_init(bucket_impl_t* inst) {
   return (0 == inst->storage) ? 0 : inst;
 }
 
-void bucket_dtor(bucket_impl_t* inst) {
+void bucket_deinit(bucket_impl_t* inst) {
   HIDX_FREE_(inst->storage, HIDX_BUCKET_STORAGE);
-  HIDX_FREE_(inst, HIDX_BUCKET_INSTANCE);
 }
 
 bool bucket_append(bucket_impl_t* inst, void const* val) {
