@@ -3,6 +3,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 
 #include "hidx/hidx.h"
+#include "bucket_impl.h"
 #include "hidx/compat.h"
 #include "hidx/encap.h"
 #include "hidx/hash.h"
@@ -18,7 +19,7 @@ MALLOC_DEFINE(HIDX_ENTRIES, "hidx_entries", "hidx entries");
 
 typedef struct hidx_impl {
   size_t size;
-  bucket_ref* entry;
+  bucket_impl_t* entry;
   hkey_extractor_cb extractor;
 } hidx_impl_t;
 
@@ -59,71 +60,70 @@ void destroy_hidx(hidx_ref* ref) {
 }
 
 static hidx_impl_t* hidx_ctor(size_t entry_num, hkey_extractor_cb extractor) {
+  assert(entry_num > 0);
   hidx_impl_t* inst = HIDX_MALLOC_(sizeof(hidx_impl_t), HIDX_INSTANCE);
   if (0 == inst)
     return 0;
 
   (*inst) = (hidx_impl_t){
       .size = entry_num,
-      .entry = HIDX_CALLOC_(entry_num, sizeof(bucket_ref), HIDX_ENTRIES),
+      .entry = HIDX_MALLOC_(entry_num * sizeof(bucket_impl_t), HIDX_ENTRIES),
       .extractor = extractor};
   if (0 == inst->entry) {
     HIDX_FREE_(inst, HIDX_INSTANCE);
     return 0;
   }
-  for (size_t i = 0; i < entry_num; ++i) {
-    inst->entry[i] = create_bucket();
-    if (!is_valid_ref(inst->entry[i])) {
-      for (size_t j = 0; j < i; ++j) {
-        destroy_bucket(&inst->entry[j]);
-      }
-      HIDX_FREE_(inst->entry, HIDX_ENTRIES);
-      HIDX_FREE_(inst, HIDX_INSTANCE);
-      return 0;
-    }
-    assert(0 == call(inst->entry[i], size));
+  size_t i = 0;
+  while (i < entry_num) {
+    if (!bucket_init(inst->entry + i))
+      break;
+    ++i;
   }
-
+  if (i != entry_num) {
+    size_t j = 0;
+    while(j <= i) {
+      bucket_dtor(inst->entry + j);
+      ++j;
+    }
+  }
   assert(0 != inst && 0 != inst->entry && "hidx allocation failed");
   return inst;
 }
 
-static void hidx_dtor(hidx_impl_t* inst) {
-  for (size_t i = 0; i < inst->size; ++i) {
-    destroy_bucket(inst->entry + i);
-  }
+void hidx_dtor(hidx_impl_t* inst) {
   HIDX_FREE_(inst->entry, HIDX_ENTRIES);
   HIDX_FREE_(inst, HIDX_INSTANCE);
 }
 
-static bool hidx_insert(hidx_impl_t* inst, void const* val) {
+bool hidx_insert(hidx_impl_t* inst, void const* val) {
   key_desc_t key = inst->extractor(val);
   size_t offset = hash(key, inst->size);
-  bucket_ref collisions = inst->entry[offset];
+  bucket_impl_t* collisions = inst->entry + offset;
   // search for dup in collisions
-  if (call(collisions, find, key, inst->extractor))
+  if (bucket_find(collisions, key, inst->extractor))
     return false;
-  return call(collisions, append, val);
+  return bucket_append(collisions, val);
 }
 
-static void hidx_remove(hidx_impl_t* inst, key_desc_t key) {
+void hidx_remove(hidx_impl_t* inst, key_desc_t key) {
   size_t offset = hash(key, inst->size);
-  bucket_ref collisions = inst->entry[offset];
+  bucket_impl_t* collisions = inst->entry + offset;
   size_t target;
-  if (call(collisions, find_index, &target, key, inst->extractor))
-    call(collisions, remove, target);
+  if (bucket_find_index(collisions, &target, key, inst->extractor))
+    bucket_remove(collisions, target);
 }
 
-static size_t hidx_count(hidx_impl_t const* inst, key_desc_t key) {
-  return hidx_find(inst, key) == 0 ? 0 : 1;
-}
-
-static size_t hidx_size(hidx_impl_t const* inst) {
+size_t hidx_size(hidx_impl_t const* inst) {
   return inst->size;
 }
 
-static void const* hidx_find(hidx_impl_t const* inst, key_desc_t key) {
+void const* hidx_find(hidx_impl_t const* inst, key_desc_t key) {
   size_t offset = hash(key, inst->size);
-  bucket_ref collisions = inst->entry[offset];
-  return call(collisions, find, key, inst->extractor);
+  bucket_impl_t* collisions = inst->entry + offset;
+  return bucket_find(collisions, key, inst->extractor);
 }
+
+size_t hidx_count(hidx_impl_t const* inst, key_desc_t key) {
+  return hidx_find(inst, key) == 0 ? 0 : 1;
+}
+

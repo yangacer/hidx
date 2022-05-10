@@ -3,7 +3,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 
 #include "hidx/bucket.h"
-#include "hidx/compat.h"
+#include "bucket_impl.h"
 
 #ifdef KLD_MODULE
 #include <sys/kernel.h>
@@ -16,31 +16,6 @@ MALLOC_DEFINE(HIDX_BUCKET_STORAGE,
 MALLOC_DEFINE(HIDX_BUCKET_REF, "hidx_bucket_ref", "hidx bucket reference");
 
 #endif
-
-typedef struct bucket_impl {
-  void const** storage;
-  uint8_t fib_idx;
-  uint32_t size;
-} bucket_impl_t;
-
-/**
- * Prototypes
- **/
-
-static bucket_impl_t* bucket_ctor();
-static void bucket_dtor(bucket_impl_t* inst);
-static bool bucket_append(bucket_impl_t* inst, void const* val);
-static void bucket_remove(bucket_impl_t* inst, size_t offset);
-static void bucket_remove_keep_order(bucket_impl_t* inst, size_t offset);
-static void const* bucket_at(bucket_impl_t* inst, size_t offset);
-static void const* bucket_find(bucket_impl_t* inst,
-                               key_desc_t key,
-                               hkey_extractor_cb extrator);
-static bool bucket_find_index(bucket_impl_t*,
-                              size_t* index,
-                              key_desc_t key,
-                              hkey_extractor_cb extractor);
-static size_t bucket_size(bucket_impl_t const* inst);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
@@ -83,17 +58,20 @@ bucket_impl_t* bucket_ctor() {
       HIDX_MALLOC_(sizeof(bucket_impl_t), HIDX_BUCKET_INSTANCE);
   if (0 == inst)
     return 0;
+  if(bucket_init(inst))
+    return inst;
+  HIDX_FREE_(inst, HIDX_BUCKET_INSTANCE);
+  return 0;
+}
+
+bucket_impl_t* bucket_init(bucket_impl_t* inst) {
   (*inst) = (bucket_impl_t){
       .storage =
           HIDX_CALLOC_(fib_table_[0], sizeof(void const*), HIDX_BUCKET_STORAGE),
       .fib_idx = 0,
       .size = 0,
   };
-  if (0 == inst->storage) {
-    HIDX_FREE_(inst, HIDX_BUCKET_INSTANCE);
-    return 0;
-  }
-  return inst;
+  return (0 == inst->storage) ? 0 : inst;
 }
 
 void bucket_dtor(bucket_impl_t* inst) {
