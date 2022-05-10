@@ -20,7 +20,7 @@ struct ElapsedTimer {
 
 int main(int argc, char**argv) {
 
-  size_t data_count = 1 << 20;
+  size_t data_count = 1 << 22;
   std::random_device rd;  //Will be used to obtain a seed for the random number engine
   std::mt19937 gen(rd());  // Standard mersenne_twister_engine seeded with rd()
   std::uniform_int_distribution<> distrib('a', 'z');
