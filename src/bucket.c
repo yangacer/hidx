@@ -2,7 +2,6 @@
 // Copyright 2022 YANG, YUN-TSE (yangacer).
 // Distributed under the Boost Software License, Version 1.0.
 
-#include "hidx/bucket.h"
 #include "bucket_impl.h"
 
 #ifdef KLD_MODULE
@@ -72,7 +71,7 @@ void bucket_dtor(bucket_impl_t* inst) {
 bucket_impl_t* bucket_init(bucket_impl_t* inst) {
   (*inst) = (bucket_impl_t){
       .storage =
-          HIDX_CALLOC_(fib_table_[0], sizeof(void const*), HIDX_BUCKET_STORAGE),
+          HIDX_CALLOC_(fib_table_[0], sizeof(key_val_t), HIDX_BUCKET_STORAGE),
       .fib_idx = 0,
       .size = 0,
   };
@@ -83,16 +82,16 @@ void bucket_deinit(bucket_impl_t* inst) {
   HIDX_FREE_(inst->storage, HIDX_BUCKET_STORAGE);
 }
 
-bool bucket_append(bucket_impl_t* inst, void const* val) {
+bool bucket_append(bucket_impl_t* inst, key_val_t kv) {
   assert(inst->size <= fib_table_[inst->fib_idx]);
 
   if (inst->size == fib_table_[inst->fib_idx]) {
     // expand
     if (inst->fib_idx + 1 == sizeof(fib_table_) / sizeof(uint32_t))
       return false;
-    void const** orig = inst->storage;
+    key_val_t* orig = inst->storage;
     inst->storage = HIDX_REALLOC_(
-        inst->storage, sizeof(void const*) * fib_table_[inst->fib_idx + 1],
+        inst->storage, sizeof(key_val_t) * fib_table_[inst->fib_idx + 1],
         HIDX_BUCKET_STORAGE);
     if (0 == inst->storage) {
       inst->storage = orig;
@@ -100,7 +99,7 @@ bool bucket_append(bucket_impl_t* inst, void const* val) {
     }
     inst->fib_idx += 1;
   }
-  inst->storage[inst->size] = val;
+  inst->storage[inst->size] = kv;
   inst->size += 1;
   return true;
 }
@@ -110,7 +109,7 @@ void bucket_remove(bucket_impl_t* inst, size_t offset) {
     return;
   inst->size -= 1;
   inst->storage[offset] = inst->storage[inst->size];
-  inst->storage[inst->size] = 0;
+  memset(inst->storage + inst->size, 0, sizeof(key_val_t));
   return;
 }
 
@@ -121,38 +120,31 @@ void bucket_remove_keep_order(bucket_impl_t* inst, size_t offset) {
   for (size_t i = offset; i < inst->size; ++i) {
     inst->storage[i] = inst->storage[i + 1];
   }
-  inst->storage[inst->size] = 0;
+  memset(inst->storage + inst->size, 0, sizeof(key_val_t));
 }
 
 void const* bucket_at(bucket_impl_t* inst, size_t offset) {
   if (offset >= inst->size)
     return 0;
-  return inst->storage[offset];
+  return inst->storage[offset].val;
 }
 
-void const* bucket_find(bucket_impl_t* inst,
-                        key_desc_t key,
-                        hkey_extractor_cb extractor) {
+void const* bucket_find(bucket_impl_t* inst, key_desc_t key) {
   if (!inst->size)
     return 0;
   size_t index;
-  if (bucket_find_index(inst, &index, key, extractor))
-    return inst->storage[index];
+  if (bucket_find_index(inst, &index, key))
+    return inst->storage[index].val;
   return 0;
 }
 
-bool bucket_find_index(bucket_impl_t* inst,
-                       size_t* index,
-                       key_desc_t key,
-                       hkey_extractor_cb extractor) {
+bool bucket_find_index(bucket_impl_t* inst, size_t* index, key_desc_t key) {
   if (!inst->size)
     return false;
   size_t i = 0;
-  key_desc_t curkey;
   do {
-    curkey = extractor(inst->storage[i]);
-    if (curkey.size == key.size &&
-        0 == memcmp(curkey.raw, key.raw, curkey.size)) {
+    const key_val_t* kv = inst->storage + i;
+    if (kv->key_size == key.size && 0 == memcmp(kv->key, key.raw, key.size)) {
       *index = i;
       return true;
     }

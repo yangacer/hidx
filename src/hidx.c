@@ -45,6 +45,12 @@ static hidx_interface_t hidx_fnptr_ = {.ctor = &hidx_ctor,
                                        .find = &hidx_find};
 #pragma GCC diagnostic pop
 
+inline static key_val_t wrap_key_val(key_desc_t key_desc, void const* val) {
+  key_val_t kv = {
+      .val = val, .key = key_desc.raw, .key_size = (uint32_t)key_desc.size};
+  return kv;
+}
+
 /**
  * Implementations
  */
@@ -105,16 +111,16 @@ bool hidx_insert(hidx_impl_t* inst, void const* val) {
   size_t offset = hash(key, inst->size);
   bucket_impl_t* collisions = inst->entry + offset;
   // search for dup in collisions
-  if (bucket_find(collisions, key, inst->extractor))
+  if (bucket_find(collisions, key))
     return false;
-  return bucket_append(collisions, val);
+  return bucket_append(collisions, wrap_key_val(key, val));
 }
 
 void hidx_remove(hidx_impl_t* inst, key_desc_t key) {
   size_t offset = hash(key, inst->size);
   bucket_impl_t* collisions = inst->entry + offset;
   size_t target;
-  if (bucket_find_index(collisions, &target, key, inst->extractor))
+  if (bucket_find_index(collisions, &target, key))
     bucket_remove(collisions, target);
 }
 
@@ -125,7 +131,7 @@ size_t hidx_size(hidx_impl_t const* inst) {
 void const* hidx_find(hidx_impl_t const* inst, key_desc_t key) {
   size_t offset = hash(key, inst->size);
   bucket_impl_t* collisions = inst->entry + offset;
-  return bucket_find(collisions, key, inst->extractor);
+  return bucket_find(collisions, key);
 }
 
 size_t hidx_count(hidx_impl_t const* inst, key_desc_t key) {

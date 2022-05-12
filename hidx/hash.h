@@ -2,8 +2,8 @@
 // Copyright 2022 YANG, YUN-TSE (yangacer).
 // Distributed under the Boost Software License, Version 1.0.
 
-#ifndef HASH_FUNCTION_H_
-#define HASH_FUNCTION_H_
+#pragma once
+#include "hidx/compat.h"
 
 #ifdef CANONICAL_HASH
 #warning "CANONICLA_HASH is used for testing only. Do not use it in production."
@@ -50,5 +50,3 @@ static inline size_t hash(key_desc_t key, size_t max) {
   return hval % max;
 #endif
 }
-
-#endif
