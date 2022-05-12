@@ -87,7 +87,7 @@ static hidx_impl_t* hidx_ctor(size_t entry_num, hkey_extractor_cb extractor) {
   }
   if (i != entry_num) {
     size_t j = 0;
-    while(j <= i) {
+    while (j <= i) {
       bucket_dtor(inst->entry + j);
       ++j;
     }
@@ -137,4 +137,3 @@ void const* hidx_find(hidx_impl_t const* inst, key_desc_t key) {
 size_t hidx_count(hidx_impl_t const* inst, key_desc_t key) {
   return hidx_find(inst, key) == 0 ? 0 : 1;
 }
-

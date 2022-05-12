@@ -60,7 +60,7 @@ bucket_impl_t* bucket_ctor() {
       HIDX_MALLOC_(sizeof(bucket_impl_t), HIDX_BUCKET_INSTANCE);
   if (0 == inst)
     return 0;
-  if(bucket_init(inst))
+  if (bucket_init(inst))
     return inst;
   HIDX_FREE_(inst, HIDX_BUCKET_INSTANCE);
   return 0;
