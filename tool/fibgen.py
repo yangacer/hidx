@@ -5,7 +5,7 @@ table = [ 16, 24 ]
 until = int(sys.argv[1])
 
 while True:
-    new = table[-1] + table[-2]
+    new = int((table[-1] + table[-2]) * 0.8)
     new += new % 16
     if new > until:
         break;
