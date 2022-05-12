@@ -18,24 +18,49 @@ struct ElapsedTimer {
   TimePoint start = TimePoint::clock::now();
 };
 
-int main(int argc, char**argv) {
-
-  size_t data_count = 1 << 22;
-  std::random_device rd;  //Will be used to obtain a seed for the random number engine
+void gen_data(size_t count) {
+  std::random_device rd;//Will be used to obtain a seed for the random number engine
   std::mt19937 gen(rd());  // Standard mersenne_twister_engine seeded with rd()
   std::uniform_int_distribution<> distrib('a', 'z');
 
-  std::vector<std::string> data;
-  for (int n = 0; n < data_count; ++n) {
+  for (int n = 0; n < count; ++n) {
     std::string str;
     str.resize(distrib(gen));
     for (auto &c : str)
       c = (char)distrib(gen);
+    std::cout << str << std::endl;
+  }
+}
 
-    data.emplace_back(std::move(str));
+std::vector<std::string> read_data() {
+  std::string str;
+  std::vector<std::string> data;
+  while(std::getline(std::cin, str))
+    data.emplace_back(str);
+  return data;
+}
+
+int main(int argc, char**argv) {
+
+  size_t data_count = 1 << 18;
+
+  if (argc == 1) {
+    gen_data(data_count);
+    return 0;
+  }
+  char suit = argv[1][0];
+  if (suit != 'u' && suit != 'h') {
+    printf(
+        "usage: perf [u|h] where\n"
+        " u: Read data from stdin and run unordered set.\n"
+        " h: Read data from stdin and run hidx.\n"
+        " Generate data to stdout when no arguments.\n");
+    return 0;
   }
 
-  {
+  std::vector<std::string> data = read_data();
+
+  if (suit == 'u') {
     std::cout << "[unordered set]\n";
     ElapsedTimer timer;
 
@@ -63,7 +88,7 @@ int main(int argc, char**argv) {
     std::cout << " count=" << timer.elapsed().count() << std::endl;
   }
 
-  {
+  if (suit == 'h') {
     std::cout << "[hidx]\n";
     ElapsedTimer timer;
 
